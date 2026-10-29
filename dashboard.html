@@ -1,0 +1,1674 @@
+<!DOCTYPE html>
+<html lang="tl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Operations Portal - Ordering & Commissary</title>
+
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --text-color: #2c3e50;
+            --text-muted: #64748b;
+            --card-bg: #ffffff;
+            --card-border: #e2e8f0;
+            --table-header-bg: #f8fafc;
+            --table-header-text: #475569;
+            --table-border: #f1f5f9;
+            --input-bg: #ffffff;
+            --input-border: #cbd5e1;
+            --input-text: #2c3e50;
+            --cart-bg: #f8fafc;
+            --btn-sec-bg: #f1f5f9;
+            --btn-sec-text: #334155;
+            --btn-sec-border: #cbd5e1;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #0f172a;
+                --text-color: #f1f5f9;
+                --text-muted: #94a3b8;
+                --card-bg: #1e293b;
+                --card-border: #334155;
+                --table-header-bg: #0f172a;
+                --table-header-text: #cbd5e1;
+                --table-border: #334155;
+                --input-bg: #0f172a;
+                --input-border: #475569;
+                --input-text: #f8fafc;
+                --cart-bg: #0f172a;
+                --btn-sec-bg: #334155;
+                --btn-sec-text: #f1f5f9;
+                --btn-sec-border: #475569;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .navbar {
+            background-color: #0b1120;
+            color: #ffffff;
+            padding: 14px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .navbar .brand {
+            font-size: 18px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .navbar .badge {
+            background-color: #3b82f6;
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 999px;
+            text-transform: uppercase;
+        }
+
+        .navbar .user-panel {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .user-email {
+            font-size: 14px;
+            color: #94a3b8;
+        }
+
+        .btn-logout {
+            background-color: #ef4444;
+            color: #ffffff;
+            border: none;
+            padding: 7px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-logout:hover {
+            background-color: #dc2626;
+        }
+
+        .main-container {
+            max-width: 1250px;
+            width: 100%;
+            margin: 24px auto;
+            padding: 0 16px;
+            flex: 1;
+        }
+
+        .role-section {
+            display: none;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 22px;
+            margin-bottom: 22px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid var(--card-border);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--card-border);
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .card-header h3 {
+            font-size: 18px;
+            color: var(--text-color);
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 13.5px;
+        }
+
+        th {
+            background-color: var(--table-header-bg);
+            color: var(--table-header-text);
+            padding: 10px 12px;
+            border-bottom: 2px solid var(--card-border);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--table-border);
+            color: var(--text-color);
+            vertical-align: middle;
+        }
+
+        .btn-action {
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 5px;
+            border: 1px solid transparent;
+            cursor: pointer;
+        }
+
+        .btn-action-primary {
+            background-color: var(--btn-sec-bg);
+            color: var(--btn-sec-text);
+            border-color: var(--btn-sec-border);
+        }
+
+        .btn-action-warning {
+            background-color: #fef3c7;
+            color: #92400e;
+            border-color: #fcd34d;
+        }
+
+        .btn-action-success {
+            background-color: #dcfce7;
+            color: #166534;
+            border-color: #86efac;
+        }
+
+        .btn-copy-sap {
+            background-color: #0284c7;
+            color: #ffffff;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-copy-sap:hover {
+            background-color: #0369a1;
+        }
+
+        .btn-add-cart {
+            background-color: #2563eb;
+            color: #ffffff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .btn-add-cart:hover {
+            background-color: #1d4ed8;
+        }
+
+        .btn-order {
+            background-color: #10b981;
+            color: #ffffff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-order:hover {
+            background-color: #059669;
+        }
+
+        /* Filter bar for History */
+        .history-filter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 16px;
+            align-items: center;
+        }
+
+        .history-filter-bar input, .history-filter-bar select {
+            padding: 8px 12px;
+            border: 1px solid var(--input-border);
+            border-radius: 6px;
+            font-size: 13.5px;
+            background-color: var(--input-bg);
+            color: var(--input-text);
+        }
+
+        .search-box {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        input, select {
+            padding: 8px 12px;
+            border: 1px solid var(--input-border);
+            border-radius: 6px;
+            font-size: 13.5px;
+            outline: none;
+            background-color: var(--input-bg);
+            color: var(--input-text);
+        }
+
+        .search-box input {
+            flex: 1;
+        }
+
+        .cart-box {
+            background: var(--cart-bg);
+            border: 1px dashed var(--card-border);
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .cart-summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .product-form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .order-qty-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .order-qty-group input {
+            width: 75px;
+        }
+
+        .order-qty-group select {
+            width: 105px;
+        }
+
+        .tag-pill {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .tag-meat { background-color: #fee2e2; color: #991b1b; }
+        .tag-veg { background-color: #dcfce7; color: #166534; }
+        .tag-active { background-color: #dcfce7; color: #15803d; }
+        .tag-inactive { background-color: #fee2e2; color: #991b1b; }
+
+        /* Status Colors */
+        .status-placed { background-color: #dbeafe; color: #1e40af; }
+        .status-processing { background-color: #fef3c7; color: #92400e; }
+        .status-delivery { background-color: #e0e7ff; color: #3730a3; }
+        .status-delivered { background-color: #dcfce7; color: #166534; }
+        .status-cancelled { background-color: #fee2e2; color: #991b1b; }
+        .status-problem { background-color: #fce7f3; color: #9d174d; }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 16px;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 880px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 24px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .modal-close-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px 8px;
+        }
+
+        .collapsible-trigger {
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .si-input {
+            width: 130px;
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="brand">
+            <span>Operations Portal</span>
+            <span class="badge" id="roleBadge">Role</span>
+        </div>
+        <div class="user-panel">
+            <span class="user-email" id="userEmailNav">checking session...</span>
+            <button class="btn-logout" id="logoutBtn">Logout</button>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <div id="loadingIndicator" style="text-align: center; padding: 50px 0; color: var(--text-muted);">
+            <h3>Ikinakarga ang iyong dashboard...</h3>
+        </div>
+
+        <!-- ==========================================
+             1. ADMIN / HEAD OFFICE
+             ========================================== -->
+        <div id="adminSection" class="role-section">
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3>Head Office - Product Master & Code Mapping</h3>
+                        <p style="font-size: 13px; color: var(--text-muted);">Magdagdag ng produkto at itakda ang presyo, Branch Code (A), SAP B1 Code (B), at Whole / Loose units.</p>
+                    </div>
+                    <button class="btn-order" onclick="toggleAddProductForm()" style="padding: 8px 14px; font-size: 13px;">
+                        ➕ Magdagdag ng Bagong Produkto
+                    </button>
+                </div>
+
+                <div id="addProductContainer" style="display: none; margin-top: 14px; padding: 16px; background: var(--cart-bg); border-radius: 8px; border: 1px dashed var(--card-border);">
+                    <h4 style="margin-bottom: 12px;">Form: Bagong Produkto</h4>
+                    <form id="productMasterForm">
+                        <div class="product-form-grid">
+                            <div>
+                                <label class="form-label">Branch Code (Code A)</label>
+                                <input type="text" id="prodBranchCode" placeholder="hal. BR-TAPA01" required style="width: 100%;">
+                            </div>
+                            <div>
+                                <label class="form-label">SAP B1 Code (Code B)</label>
+                                <input type="text" id="prodSapCode" placeholder="hal. SAP-MEAT-1004" required style="width: 100%;">
+                            </div>
+                            <div>
+                                <label class="form-label">Item Description</label>
+                                <input type="text" id="prodName" placeholder="hal. Marinated Beef Tapa" required style="width: 100%;">
+                            </div>
+                            <div>
+                                <label class="form-label">Price (PHP)</label>
+                                <input type="number" step="0.01" min="0" id="prodPrice" placeholder="hal. 350.00" required style="width: 100%;">
+                            </div>
+                            <div>
+                                <label class="form-label">Commissary Route</label>
+                                <select id="prodCommissary" style="width: 100%;" required>
+                                    <option value="commissaryA">Commissary A (Meat / SAP B1)</option>
+                                    <option value="commissaryB">Commissary B (Produce)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="form-label">Whole Unit</label>
+                                <input type="text" id="prodWholeUnit" placeholder="hal. kg, box, pack" required style="width: 100%;">
+                            </div>
+                            <div>
+                                <label class="form-label">Loose Unit</label>
+                                <input type="text" id="prodLooseUnit" placeholder="hal. g, ml, pc" required style="width: 100%;">
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button type="submit" class="btn-order" style="padding: 8px 16px;">💾 I-save sa Firebase</button>
+                            <button type="button" class="btn-action btn-action-primary" onclick="toggleAddProductForm()">Kanselahin</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Master List Table -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Registered Products Master List</h3>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Branch Code (A)</th>
+                                <th>SAP B1 Code (B)</th>
+                                <th>Description</th>
+                                <th>Presyo (PHP)</th>
+                                <th>Commissary</th>
+                                <th>Whole / Loose</th>
+                                <th>Status</th>
+                                <th>Aksyon</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminProductsMasterTable">
+                            <tr><td colspan="8" style="text-align:center; color: var(--text-muted);">Kumukuha ng master products...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ADMIN HISTORY & TRACKING -->
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3>Head Office - Master Transaction History & Order Audit</h3>
+                        <p style="font-size: 13px; color: var(--text-muted);">Mabilisang paghahanap gamit ang SI number, Branch, o Petsa para ma-locate ang orders at status.</p>
+                    </div>
+                </div>
+                <!-- Filter Controls -->
+                <div class="history-filter-bar">
+                    <input type="text" id="adminHistorySearch" placeholder="🔍 Search SI Number / Order Ref / Branch..." style="flex: 2; min-width: 220px;">
+                    <select id="adminStatusFilter" style="flex: 1; min-width: 140px;">
+                        <option value="">Lahat ng Status</option>
+                        <option value="placed">Placed</option>
+                        <option value="processing">Processing</option>
+                        <option value="delivery">Delivery</option>
+                        <option value="delivered">Delivered (Successful)</option>
+                        <option value="cancelled">Cancelled</option>
+                        <option value="problem">May Problema</option>
+                    </select>
+                    <input type="date" id="adminDateFilter" title="Filter ayon sa Delivery Date" style="flex: 1; min-width: 140px;">
+                    <button class="btn-action btn-action-primary" onclick="clearAdminHistoryFilters()">I-clear</button>
+                </div>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Order Ref</th>
+                                <th>SI Number</th>
+                                <th>Branch</th>
+                                <th>Commissary</th>
+                                <th>Delivery Date</th>
+                                <th>Status</th>
+                                <th>Items</th>
+                                <th>Aksyon</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminHistoryTable">
+                            <tr><td colspan="8" style="text-align:center; color: var(--text-muted);">Kumukuha ng history...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             2. BRANCH ORDER & HISTORY VIEW
+             ========================================== -->
+        <div id="branchSection" class="role-section">
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3>Branch Order Center (<span id="branchCodeDisplay">-</span>)</h3>
+                        <p style="font-size: 13px; color: var(--text-muted);">Pumili ng target delivery date at i-add ang mga kailangang items.</p>
+                    </div>
+                    <div>
+                        <label style="font-size: 13px; font-weight: 600; margin-right: 8px;">Target Delivery Date:</label>
+                        <input type="date" id="orderDatePicker" required>
+                    </div>
+                </div>
+
+                <div class="search-box">
+                    <input type="text" id="itemSearchInput" placeholder="Mag-search ng aktibong produkto gamit ang Branch Code o Pangalan...">
+                    <button type="button" id="clearSearchBtn" class="btn-action btn-action-primary">I-clear</button>
+                </div>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Branch Code</th>
+                                <th>Deskripsyon</th>
+                                <th>Presyo</th>
+                                <th>Commissary</th>
+                                <th>Whole Option</th>
+                                <th>Loose Option</th>
+                                <th>Order Quantity & Unit</th>
+                                <th>Aksyon</th>
+                                <th>Status Control</th>
+                            </tr>
+                        </thead>
+                        <tbody id="branchOrderItemsTable">
+                            <tr><td colspan="9" style="text-align:center; color: var(--text-muted);">Naglo-load ng mga aktibong produkto...</td></tr>
+                        </tbody>
+                    </table>
+                    <div id="noResultsMsg" style="display: none; text-align: center; padding: 20px; color: var(--text-muted);">
+                        Walang nahanap na aktibong produkto.
+                    </div>
+                </div>
+
+                <!-- Cart -->
+                <div class="cart-box" id="cartContainer" style="display: none;">
+                    <h4 style="margin-bottom: 12px;">Cart Items (<span id="cartCount">0</span>)</h4>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Branch Code</th>
+                                    <th>SAP Code (Ref)</th>
+                                    <th>Deskripsyon</th>
+                                    <th>Presyo</th>
+                                    <th>Order Type</th>
+                                    <th>Quantity</th>
+                                    <th>Commissary</th>
+                                    <th>Aksyon</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cartTableBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="cart-summary">
+                        <span style="font-weight: 600; font-size: 14px; color: var(--text-muted);">Tiyaking tama ang dami at sukat (Whole o Loose) bago i-confirm.</span>
+                        <button class="btn-order" id="placeOrderBtn">Confirm & Place Order</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inactive Drawer -->
+            <div class="card">
+                <div class="card-header collapsible-trigger" onclick="toggleInactiveDrawer()">
+                    <h3 style="display: flex; align-items: center; gap: 8px;">
+                        <span>📦 Mga Produktong Naka-Inactive</span>
+                        <span class="badge" id="inactiveCountBadge" style="background:#64748b;">0</span>
+                    </h3>
+                    <span id="drawerArrow">▼ I-toggle ang Listahan</span>
+                </div>
+                <div id="inactiveDrawerBody" style="display: none;">
+                    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">
+                        Nakatago ang mga aytem na ito sa search bar at ordering view. I-click ang "I-reactivate" para ibalik.
+                    </p>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Branch Code</th>
+                                    <th>SAP Code</th>
+                                    <th>Deskripsyon</th>
+                                    <th>Commissary</th>
+                                    <th>Whole / Loose</th>
+                                    <th>Aksyon</th>
+                                </tr>
+                            </thead>
+                            <tbody id="branchInactiveItemsTable">
+                                <tr><td colspan="6" style="text-align:center; color: var(--text-muted);">Walang inactive na produkto.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BRANCH ORDER HISTORY -->
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3>Kasaysayan ng mga Order ng Branch (Order History)</h3>
+                        <p style="font-size: 13px; color: var(--text-muted);">Subaybayan ang mga lumang order, processing, on-delivery, delivered, o kinansela.</p>
+                    </div>
+                </div>
+                <!-- Filter Controls for Branch -->
+                <div class="history-filter-bar">
+                    <input type="text" id="branchHistorySearch" placeholder="🔍 Search SI Number o Order Ref..." style="flex: 2; min-width: 200px;">
+                    <select id="branchStatusFilter" style="flex: 1; min-width: 140px;">
+                        <option value="">Lahat ng Status</option>
+                        <option value="placed">Placed</option>
+                        <option value="processing">Processing</option>
+                        <option value="delivery">Delivery</option>
+                        <option value="delivered">Delivered (Successful)</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                    <input type="date" id="branchDateFilter" title="Filter by delivery date" style="flex: 1; min-width: 140px;">
+                    <button class="btn-action btn-action-primary" onclick="clearBranchHistoryFilters()">I-clear</button>
+                </div>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Order Ref</th>
+                                <th>SI Number</th>
+                                <th>Commissary</th>
+                                <th>Delivery Date</th>
+                                <th>Status</th>
+                                <th>Dami ng Items</th>
+                                <th>Aksyon</th>
+                            </tr>
+                        </thead>
+                        <tbody id="branchHistoryTable">
+                            <tr><td colspan="7" style="text-align:center; color: var(--text-muted);">Kumukuha ng history...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             3. COMMISSARY A (MEAT / SAP B1)
+             ========================================== -->
+        <div id="commissaryASection" class="role-section">
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3>Commissary A - Meat Orders & History (SAP B1 Ready)</h3>
+                        <p style="font-size: 13px; color: var(--text-muted);">Buksan ang order para i-update ang status, maglagay ng SI Number, o kopyahin ang SAP Code para sa resibo.</p>
+                    </div>
+                </div>
+
+                <div class="history-filter-bar">
+                    <input type="text" id="commAHistorySearch" placeholder="🔍 Search SI Number / Order Ref / Branch..." style="flex: 2; min-width: 220px;">
+                    <select id="commAStatusFilter" style="flex: 1; min-width: 140px;">
+                        <option value="">Lahat ng Status</option>
+                        <option value="placed">Placed</option>
+                        <option value="processing">Processing</option>
+                        <option value="delivery">Delivery</option>
+                        <option value="delivered">Delivered (Successful)</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                    <input type="date" id="commADateFilter" style="flex: 1; min-width: 140px;">
+                    <button class="btn-action btn-action-primary" onclick="clearCommAFilters()">I-clear</button>
+                </div>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Order Ref</th>
+                                <th>SI Number</th>
+                                <th>Branch</th>
+                                <th>Delivery Date</th>
+                                <th>Status</th>
+                                <th>Total Items</th>
+                                <th>Order Timestamp</th>
+                                <th>Aksyon</th>
+                            </tr>
+                        </thead>
+                        <tbody id="commissaryAOrdersSummaryTable">
+                            <tr><td colspan="8" style="text-align:center; color: var(--text-muted);">Naglo-load ng orders...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             4. COMMISSARY B (PRODUCE / INVENTORY)
+             ========================================== -->
+        <div id="commissaryBSection" class="role-section">
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3>Commissary B - Fresh Produce Orders & History</h3>
+                        <p style="font-size: 13px; color: var(--text-muted);">Pamahalaan ang mga order, i-assign ang SI Number, at baguhin ang status (processing/delivery/delivered).</p>
+                    </div>
+                </div>
+
+                <div class="history-filter-bar">
+                    <input type="text" id="commBHistorySearch" placeholder="🔍 Search SI Number / Order Ref / Branch..." style="flex: 2; min-width: 220px;">
+                    <select id="commBStatusFilter" style="flex: 1; min-width: 140px;">
+                        <option value="">Lahat ng Status</option>
+                        <option value="placed">Placed</option>
+                        <option value="processing">Processing</option>
+                        <option value="delivery">Delivery</option>
+                        <option value="delivered">Delivered (Successful)</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                    <input type="date" id="commBDateFilter" style="flex: 1; min-width: 140px;">
+                    <button class="btn-action btn-action-primary" onclick="clearCommBFilters()">I-clear</button>
+                </div>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Order Ref</th>
+                                <th>SI Number</th>
+                                <th>Branch</th>
+                                <th>Delivery Date</th>
+                                <th>Status</th>
+                                <th>Total Items</th>
+                                <th>Order Timestamp</th>
+                                <th>Aksyon</th>
+                            </tr>
+                        </thead>
+                        <tbody id="commissaryBOrdersSummaryTable">
+                            <tr><td colspan="8" style="text-align:center; color: var(--text-muted);">Naglo-load ng orders...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         ORDER DETAILS & HISTORY MODAL
+         ========================================== -->
+    <div id="orderDetailsModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h3 id="modalOrderRefTitle" style="font-size: 18px;">Order Details</h3>
+                    <p id="modalOrderSubtitle" style="font-size: 13px; color: var(--text-muted);">-</p>
+                </div>
+                <button class="modal-close-btn" onclick="closeOrderModal()">&times;</button>
+            </div>
+
+            <!-- Status Control & SI Assignment Panel -->
+            <div id="modalManagementPanel" style="background: var(--cart-bg); border: 1px solid var(--card-border); padding: 14px; border-radius: 8px; margin-bottom: 16px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px;">
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <label style="font-size: 12px; font-weight: 600;">Status:</label>
+                    <select id="modalStatusSelect" style="padding: 6px 10px; font-size: 13px;">
+                        <option value="placed">Placed</option>
+                        <option value="processing">Processing</option>
+                        <option value="delivery">Delivery (On the way)</option>
+                        <option value="delivered">Delivered (Successful)</option>
+                        <option value="cancelled">Cancelled</option>
+                        <option value="problem">May Problema</option>
+                    </select>
+
+                    <label style="font-size: 12px; font-weight: 600; margin-left: 6px;">SI Number:</label>
+                    <input type="text" id="modalSiInput" placeholder="hal. SI-2026-001" style="padding: 6px 10px; font-size: 13px; width: 140px;">
+
+                    <button class="btn-action btn-action-primary" onclick="updateOrderStatusAndSI()">💾 I-update</button>
+                </div>
+
+                <div>
+                    <button class="btn-copy-sap" id="btnCopySapAll" onclick="copyModalOrderForSAP()">
+                        📋 Kopyahin Lahat para sa SAP / Sheets
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>SAP B1 Code</th>
+                            <th>Branch Code</th>
+                            <th>Item Description</th>
+                            <th>Price (PHP)</th>
+                            <th>Quantity & UoM</th>
+                            <th>Aksyon</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modalOrderItemsTable"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+          apiKey: "AIzaSyBNUNZOcFBbaxTgG4oINS6WUZj_PVLCWtk",
+          authDomain: "ordering-kenji.firebaseapp.com",
+          projectId: "ordering-kenji",
+          storageBucket: "ordering-kenji.firebasestorage.app",
+          messagingSenderId: "22937850065",
+          appId: "1:22937850065:web:978cdd85eae967ed6eb5f0",
+          measurementId: "G-WD8ZGRBRXN"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        let currentActiveUser = null;
+        let currentUserRole = "";
+        let currentUserBranchCode = "";
+        let cart = [];
+        let currentModalOrderGroup = null;
+
+        // In-memory collections for fast search/filtering
+        let allOrdersList = [];
+
+        // 5-Min Auto Logout
+        (function() {
+            let timeout;
+            function resetTimer() {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    alert("5 minuto kang walang activity. Kusa kang na-logout para sa security.");
+                    auth.signOut();
+                }, 300000);
+            }
+            window.onload = resetTimer;
+            document.onmousemove = resetTimer;
+            document.onkeypress = resetTimer;
+        })();
+
+        // Auth & Role Router
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                currentActiveUser = user;
+                document.getElementById('userEmailNav').innerText = user.email;
+
+                db.collection("accounts").doc(user.uid).get().then((doc) => {
+                    document.getElementById('loadingIndicator').style.display = 'none';
+
+                    if (doc.exists) {
+                        const data = doc.data();
+                        currentUserRole = data.role;
+
+                        if (data.status === "block" || data.status === "inactive") {
+                            alert("Account " + data.status + ". Hindi makakapasok.");
+                            auth.signOut();
+                            return;
+                        }
+
+                        document.getElementById('roleBadge').innerText = data.role.toUpperCase();
+
+                        if (data.role === "admin") {
+                            document.getElementById('adminSection').style.display = 'block';
+                            listenToAdminMasterProducts();
+                            listenToAllOrders();
+                        } else if (data.role === "branch") {
+                            document.getElementById('branchSection').style.display = 'block';
+                            currentUserBranchCode = data.branchCode || "BRANCH";
+                            document.getElementById('branchCodeDisplay').innerText = currentUserBranchCode;
+                            listenToBranchProducts();
+                            listenToAllOrders();
+                        } else if (data.role === "commissaryA") {
+                            document.getElementById('commissaryASection').style.display = 'block';
+                            listenToAllOrders();
+                        } else if (data.role === "commissaryB") {
+                            document.getElementById('commissaryBSection').style.display = 'block';
+                            listenToAllOrders();
+                        }
+                    } else {
+                        const branchCode = prompt("Unang login! Ilagay ang Branch Code (hal. SO3, GB5, ATC):");
+                        if (branchCode) {
+                            db.collection("accounts").doc(user.uid).set({
+                                email: user.email,
+                                role: "branch",
+                                status: "active",
+                                branchCode: branchCode.trim().toUpperCase()
+                            }).then(() => location.reload());
+                        } else {
+                            auth.signOut();
+                        }
+                    }
+                });
+            } else {
+                window.location.href = "index.html";
+            }
+        });
+
+        // ==========================================
+        // 1. PRODUCTS MANAGEMENT (Head Office)
+        // ==========================================
+        function toggleAddProductForm() {
+            const container = document.getElementById('addProductContainer');
+            container.style.display = (container.style.display === 'none' || container.style.display === '') ? 'block' : 'none';
+        }
+
+        document.getElementById('productMasterForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const branchCode = document.getElementById('prodBranchCode').value.trim().toUpperCase();
+            const sapCode = document.getElementById('prodSapCode').value.trim().toUpperCase();
+            const name = document.getElementById('prodName').value.trim();
+            const price = parseFloat(document.getElementById('prodPrice').value) || 0;
+            const commissary = document.getElementById('prodCommissary').value;
+            const wholeUnit = document.getElementById('prodWholeUnit').value.trim();
+            const looseUnit = document.getElementById('prodLooseUnit').value.trim();
+
+            db.collection("products").doc(branchCode).set({
+                branchCode: branchCode,
+                sapCode: sapCode,
+                name: name,
+                price: price,
+                commissary: commissary,
+                wholeUnit: wholeUnit,
+                looseUnit: looseUnit,
+                status: "active",
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                alert("Matagumpay na naidagdag ang produkto sa Firebase!");
+                document.getElementById('productMasterForm').reset();
+                toggleAddProductForm();
+            }).catch(err => {
+                alert("Error sa pag-save: " + err.message);
+            });
+        });
+
+        function listenToAdminMasterProducts() {
+            db.collection("products").onSnapshot((snapshot) => {
+                const tbody = document.getElementById('adminProductsMasterTable');
+                tbody.innerHTML = '';
+                if (snapshot.empty) {
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--text-muted);">Wala pang produkto.</td></tr>';
+                    return;
+                }
+                snapshot.forEach(doc => {
+                    const p = doc.data();
+                    const statusVal = p.status || 'active';
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><b>${p.branchCode}</b></td>
+                        <td><b>${p.sapCode}</b></td>
+                        <td>${p.name}</td>
+                        <td>PHP ${(p.price || 0).toFixed(2)}</td>
+                        <td><span class="tag-pill ${p.commissary === 'commissaryA' ? 'tag-meat' : 'tag-veg'}">${p.commissary === 'commissaryA' ? 'Meat (SAP)' : 'Produce'}</span></td>
+                        <td>${p.wholeUnit} / ${p.looseUnit}</td>
+                        <td><span class="tag-pill ${statusVal === 'active' ? 'tag-active' : 'tag-inactive'}">${statusVal.toUpperCase()}</span></td>
+                        <td>
+                            <button class="btn-action ${statusVal === 'active' ? 'btn-action-warning' : 'btn-action-success'}" onclick="toggleProductStatus('${doc.id}', '${statusVal}')">
+                                ${statusVal === 'active' ? 'I-inactive' : 'I-activate'}
+                            </button>
+                            <button class="btn-action" style="background:#fee2e2; color:#991b1b; margin-left:4px;" onclick="deleteProduct('${doc.id}')">Burahin</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
+        }
+
+        function deleteProduct(docId) {
+            if (confirm("Gusto mo bang burahin ang produktong ito?")) {
+                db.collection("products").doc(docId).delete();
+            }
+        }
+
+        function toggleProductStatus(docId, currentStatus) {
+            const newStatus = (currentStatus === 'active') ? 'inactive' : 'active';
+            const actionText = (newStatus === 'inactive') ? 'I-inactive' : 'I-activate';
+
+            if (!confirm(`Sigurado ka bang nais mong ${actionText} ang produktong ito?`)) return;
+
+            db.collection("products").doc(docId).update({
+                status: newStatus,
+                statusUpdatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                updatedBy: currentActiveUser.email
+            }).then(() => {
+                alert(`Naging ${newStatus.toUpperCase()} na ang produkto.`);
+            }).catch(err => {
+                alert("Error sa pag-update: " + err.message);
+            });
+        }
+
+        // ==========================================
+        // 2. BRANCH ORDERING & DRAWER
+        // ==========================================
+        function listenToBranchProducts() {
+            db.collection("products").onSnapshot((snapshot) => {
+                const activeTbody = document.getElementById('branchOrderItemsTable');
+                const inactiveTbody = document.getElementById('branchInactiveItemsTable');
+                activeTbody.innerHTML = "";
+                inactiveTbody.innerHTML = "";
+
+                let activeCount = 0;
+                let inactiveCount = 0;
+
+                snapshot.forEach((doc) => {
+                    const item = doc.data();
+                    const status = item.status || 'active';
+
+                    if (status === 'active') {
+                        activeCount++;
+                        const tr = document.createElement('tr');
+                        tr.className = "product-row";
+                        tr.innerHTML = `
+                            <td class="item-branch-code"><b>${item.branchCode}</b></td>
+                            <td class="item-name">${item.name}</td>
+                            <td>PHP ${(item.price || 0).toFixed(2)}</td>
+                            <td><span class="tag-pill ${item.commissary === 'commissaryA' ? 'tag-meat' : 'tag-veg'}">${item.commissary === 'commissaryA' ? 'Meat' : 'Produce'}</span></td>
+                            <td>${item.wholeUnit}</td>
+                            <td>${item.looseUnit}</td>
+                            <td>
+                                <div class="order-qty-group">
+                                    <input type="number" step="any" min="0.01" value="1" id="qty-${doc.id}">
+                                    <select id="type-${doc.id}">
+                                        <option value="Whole (${item.wholeUnit})">Whole (${item.wholeUnit})</option>
+                                        <option value="Loose (${item.looseUnit})">Loose (${item.looseUnit})</option>
+                                    </select>
+                                </div>
+                            </td>
+                            <td>
+                                <button class="btn-add-cart" onclick="addToCart('${item.branchCode}', '${item.sapCode}', '${item.name}', ${item.price || 0}, '${item.commissary}', 'qty-${doc.id}', 'type-${doc.id}')">
+                                    🛒 Add to Cart
+                                </button>
+                            </td>
+                            <td>
+                                <button class="btn-action btn-action-warning" onclick="toggleProductStatus('${doc.id}', 'active')" title="I-inactive para mawala sa search at ordering table">
+                                    Mark Inactive
+                                </button>
+                            </td>
+                        `;
+                        activeTbody.appendChild(tr);
+                    } else {
+                        inactiveCount++;
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td><b>${item.branchCode}</b></td>
+                            <td>${item.sapCode}</td>
+                            <td>${item.name}</td>
+                            <td><span class="tag-pill ${item.commissary === 'commissaryA' ? 'tag-meat' : 'tag-veg'}">${item.commissary === 'commissaryA' ? 'Meat' : 'Produce'}</span></td>
+                            <td>${item.wholeUnit} / ${item.looseUnit}</td>
+                            <td>
+                                <button class="btn-action btn-action-success" onclick="toggleProductStatus('${doc.id}', 'inactive')">
+                                    ✓ I-reactivate
+                                </button>
+                            </td>
+                        `;
+                        inactiveTbody.appendChild(tr);
+                    }
+                });
+
+                document.getElementById('inactiveCountBadge').innerText = inactiveCount;
+
+                if (activeCount === 0) {
+                    activeTbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color: var(--text-muted);">Walang aktibong produkto na available para sa order.</td></tr>';
+                }
+                if (inactiveCount === 0) {
+                    inactiveTbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--text-muted);">Walang inactive na produkto sa kasalukuyan.</td></tr>';
+                }
+            });
+        }
+
+        function toggleInactiveDrawer() {
+            const body = document.getElementById('inactiveDrawerBody');
+            const arrow = document.getElementById('drawerArrow');
+            if (body.style.display === 'none') {
+                body.style.display = 'block';
+                arrow.innerText = '▲ Itago ang Listahan';
+            } else {
+                body.style.display = 'none';
+                arrow.innerText = '▼ I-toggle ang Listahan';
+            }
+        }
+
+        function addToCart(branchCode, sapCode, name, price, commissary, qtyId, typeId) {
+            const qtyVal = parseFloat(document.getElementById(qtyId).value);
+            const typeVal = document.getElementById(typeId).value;
+
+            if (!qtyVal || qtyVal <= 0) {
+                alert("Mangyaring maglagay ng wastong dami (quantity).");
+                return;
+            }
+
+            cart.push({
+                branchCode: branchCode,
+                sapCode: sapCode,
+                name: name,
+                price: price,
+                commissary: commissary,
+                qty: qtyVal,
+                measurementChoice: typeVal
+            });
+
+            renderCart();
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cartContainer');
+            const tbody = document.getElementById('cartTableBody');
+            tbody.innerHTML = '';
+
+            if (cart.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+
+            container.style.display = 'block';
+
+            cart.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${item.branchCode}</td>
+                    <td><b>${item.sapCode}</b></td>
+                    <td>${item.name}</td>
+                    <td>PHP ${item.price.toFixed(2)}</td>
+                    <td>${item.measurementChoice}</td>
+                    <td><b>${item.qty}</b></td>
+                    <td>${item.commissary === 'commissaryA' ? 'Meat' : 'Produce'}</td>
+                    <td><button class="btn-action" style="background:#fee2e2; color:#991b1b;" onclick="removeFromCart(${index})">Alisin</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('cartCount').innerText = cart.length;
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            renderCart();
+        }
+
+        // CONFIRM & PLACE ORDER
+        document.getElementById('placeOrderBtn').addEventListener('click', function() {
+            const deliveryDate = document.getElementById('orderDatePicker').value;
+            if (!deliveryDate) {
+                alert("Pumili muna ng Target Delivery Date.");
+                return;
+            }
+            if (cart.length === 0) {
+                alert("Walang laman ang iyong cart.");
+                return;
+            }
+
+            const orderRef = "ORD-" + Date.now().toString().slice(-6);
+            const batch = db.batch();
+
+            cart.forEach((item) => {
+                const docRef = db.collection("orders").doc();
+                batch.set(docRef, {
+                    orderRef: orderRef,
+                    siNumber: "", // Initial na blanko bago mag-invoice si Commissary
+                    branchCode: currentUserBranchCode,
+                    userEmail: currentActiveUser.email,
+                    branchItemCode: item.branchCode,
+                    sapItemCode: item.sapCode,
+                    itemName: item.name,
+                    price: item.price,
+                    qty: item.qty,
+                    measurement: item.measurementChoice,
+                    commissary: item.commissary,
+                    deliveryDate: deliveryDate,
+                    status: "placed", // Default: placed
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            });
+
+            batch.commit().then(() => {
+                alert(`Order Success! Reference: ${orderRef}\nNai-split na sa kaukulang Commissary ang items.`);
+                cart = [];
+                renderCart();
+            }).catch(err => {
+                alert("Error sa pag-place ng order: " + err.message);
+            });
+        });
+
+        // ==========================================
+        // 3. MASTER REAL-TIME ORDERS LISTENER & GROUPING
+        // ==========================================
+        function listenToAllOrders() {
+            db.collection("orders").orderBy("timestamp", "desc").onSnapshot((snapshot) => {
+                allOrdersList = [];
+                snapshot.forEach(doc => {
+                    allOrdersList.push({ id: doc.id, ...doc.data() });
+                });
+
+                renderAllRoleHistories();
+            });
+        }
+
+        // Helper para igrupo ang single items ayon sa [orderRef + commissary]
+        function getGroupedOrders() {
+            const groups = {};
+            allOrdersList.forEach(item => {
+                const ref = item.orderRef || "N/A";
+                const comm = item.commissary || "unknown";
+                const key = `${ref}_${comm}`;
+
+                if (!groups[key]) {
+                    groups[key] = {
+                        orderRef: ref,
+                        commissary: comm,
+                        branchCode: item.branchCode || "N/A",
+                        deliveryDate: item.deliveryDate || "-",
+                        siNumber: item.siNumber || "",
+                        status: item.status || "placed",
+                        timestamp: item.timestamp ? new Date(item.timestamp.toDate()).toLocaleString() : "Just now",
+                        docIds: [],
+                        items: []
+                    };
+                }
+                groups[key].docIds.push(item.id);
+                groups[key].items.push(item);
+                // Kung may naka-set na SI sa isa, gamitin sa grupo
+                if (item.siNumber && !groups[key].siNumber) groups[key].siNumber = item.siNumber;
+            });
+            return Object.values(groups);
+        }
+
+        function renderAllRoleHistories() {
+            if (currentUserRole === "admin") renderAdminHistory();
+            if (currentUserRole === "branch") renderBranchHistory();
+            if (currentUserRole === "commissaryA") renderCommAHistory();
+            if (currentUserRole === "commissaryB") renderCommBHistory();
+        }
+
+        // --- ADMIN HISTORY RENDER ---
+        function renderAdminHistory() {
+            const tbody = document.getElementById('adminHistoryTable');
+            if (!tbody) return;
+
+            const q = (document.getElementById('adminHistorySearch')?.value || "").toLowerCase().trim();
+            const statusFilter = document.getElementById('adminStatusFilter')?.value || "";
+            const dateFilter = document.getElementById('adminDateFilter')?.value || "";
+
+            const groups = getGroupedOrders();
+            tbody.innerHTML = "";
+
+            const filtered = groups.filter(g => {
+                const matchQuery = (g.orderRef.toLowerCase().includes(q) || 
+                                    g.siNumber.toLowerCase().includes(q) || 
+                                    g.branchCode.toLowerCase().includes(q));
+                const matchStatus = !statusFilter || g.status === statusFilter;
+                const matchDate = !dateFilter || g.deliveryDate === dateFilter;
+                return matchQuery && matchStatus && matchDate;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--text-muted);">Walang nahanap na order sa filter na ito.</td></tr>';
+                return;
+            }
+
+            filtered.forEach(g => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><b>${g.orderRef}</b></td>
+                    <td><b>${g.siNumber || '<span style="color:var(--text-muted);">-</span>'}</b></td>
+                    <td><b>${g.branchCode}</b></td>
+                    <td>${g.commissary === 'commissaryA' ? 'Meat (SAP)' : 'Produce'}</td>
+                    <td>${g.deliveryDate}</td>
+                    <td><span class="tag-pill status-${g.status}">${g.status}</span></td>
+                    <td>${g.items.length} item(s)</td>
+                    <td>
+                        <button class="btn-action btn-action-primary" onclick='openOrderModal(${JSON.stringify(g).replace(/'/g, "&apos;")})'>
+                            📂 Buksan
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- BRANCH HISTORY RENDER ---
+        function renderBranchHistory() {
+            const tbody = document.getElementById('branchHistoryTable');
+            if (!tbody) return;
+
+            const q = (document.getElementById('branchHistorySearch')?.value || "").toLowerCase().trim();
+            const statusFilter = document.getElementById('branchStatusFilter')?.value || "";
+            const dateFilter = document.getElementById('branchDateFilter')?.value || "";
+
+            const groups = getGroupedOrders().filter(g => g.branchCode === currentUserBranchCode);
+            tbody.innerHTML = "";
+
+            const filtered = groups.filter(g => {
+                const matchQuery = (g.orderRef.toLowerCase().includes(q) || g.siNumber.toLowerCase().includes(q));
+                const matchStatus = !statusFilter || g.status === statusFilter;
+                const matchDate = !dateFilter || g.deliveryDate === dateFilter;
+                return matchQuery && matchStatus && matchDate;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--text-muted);">Walang kasaysayan ng order.</td></tr>';
+                return;
+            }
+
+            filtered.forEach(g => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><b>${g.orderRef}</b></td>
+                    <td><b>${g.siNumber || '<span style="color:var(--text-muted);">Pending SI</span>'}</b></td>
+                    <td>${g.commissary === 'commissaryA' ? 'Meat (SAP)' : 'Produce'}</td>
+                    <td>${g.deliveryDate}</td>
+                    <td><span class="tag-pill status-${g.status}">${g.status}</span></td>
+                    <td>${g.items.length} item(s)</td>
+                    <td>
+                        <button class="btn-action btn-action-primary" onclick='openOrderModal(${JSON.stringify(g).replace(/'/g, "&apos;")})'>
+                            📂 Tingnan
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- COMMISSARY A HISTORY RENDER ---
+        function renderCommAHistory() {
+            const tbody = document.getElementById('commissaryAOrdersSummaryTable');
+            if (!tbody) return;
+
+            const q = (document.getElementById('commAHistorySearch')?.value || "").toLowerCase().trim();
+            const statusFilter = document.getElementById('commAStatusFilter')?.value || "";
+            const dateFilter = document.getElementById('commADateFilter')?.value || "";
+
+            const groups = getGroupedOrders().filter(g => g.commissary === "commissaryA");
+            tbody.innerHTML = "";
+
+            const filtered = groups.filter(g => {
+                const matchQuery = (g.orderRef.toLowerCase().includes(q) || 
+                                    g.siNumber.toLowerCase().includes(q) || 
+                                    g.branchCode.toLowerCase().includes(q));
+                const matchStatus = !statusFilter || g.status === statusFilter;
+                const matchDate = !dateFilter || g.deliveryDate === dateFilter;
+                return matchQuery && matchStatus && matchDate;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--text-muted);">Walang orders.</td></tr>';
+                return;
+            }
+
+            filtered.forEach(g => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><b>${g.orderRef}</b></td>
+                    <td><b>${g.siNumber || '<span style="color:var(--text-muted);">-</span>'}</b></td>
+                    <td><b>${g.branchCode}</b></td>
+                    <td>${g.deliveryDate}</td>
+                    <td><span class="tag-pill status-${g.status}">${g.status}</span></td>
+                    <td>${g.items.length} item(s)</td>
+                    <td style="color: var(--text-muted); font-size: 12px;">${g.timestamp}</td>
+                    <td>
+                        <button class="btn-action btn-action-primary" onclick='openOrderModal(${JSON.stringify(g).replace(/'/g, "&apos;")})'>
+                            📂 Buksan ang Order
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- COMMISSARY B HISTORY RENDER ---
+        function renderCommBHistory() {
+            const tbody = document.getElementById('commissaryBOrdersSummaryTable');
+            if (!tbody) return;
+
+            const q = (document.getElementById('commBHistorySearch')?.value || "").toLowerCase().trim();
+            const statusFilter = document.getElementById('commBStatusFilter')?.value || "";
+            const dateFilter = document.getElementById('commBDateFilter')?.value || "";
+
+            const groups = getGroupedOrders().filter(g => g.commissary === "commissaryB");
+            tbody.innerHTML = "";
+
+            const filtered = groups.filter(g => {
+                const matchQuery = (g.orderRef.toLowerCase().includes(q) || 
+                                    g.siNumber.toLowerCase().includes(q) || 
+                                    g.branchCode.toLowerCase().includes(q));
+                const matchStatus = !statusFilter || g.status === statusFilter;
+                const matchDate = !dateFilter || g.deliveryDate === dateFilter;
+                return matchQuery && matchStatus && matchDate;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--text-muted);">Walang orders.</td></tr>';
+                return;
+            }
+
+            filtered.forEach(g => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><b>${g.orderRef}</b></td>
+                    <td><b>${g.siNumber || '<span style="color:var(--text-muted);">-</span>'}</b></td>
+                    <td><b>${g.branchCode}</b></td>
+                    <td>${g.deliveryDate}</td>
+                    <td><span class="tag-pill status-${g.status}">${g.status}</span></td>
+                    <td>${g.items.length} item(s)</td>
+                    <td style="color: var(--text-muted); font-size: 12px;">${g.timestamp}</td>
+                    <td>
+                        <button class="btn-action btn-action-primary" onclick='openOrderModal(${JSON.stringify(g).replace(/'/g, "&apos;")})'>
+                            📂 Buksan ang Order
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Filter event listeners
+        ['adminHistorySearch', 'adminStatusFilter', 'adminDateFilter'].forEach(id => {
+            document.getElementById(id)?.addEventListener('input', renderAdminHistory);
+            document.getElementById(id)?.addEventListener('change', renderAdminHistory);
+        });
+        ['branchHistorySearch', 'branchStatusFilter', 'branchDateFilter'].forEach(id => {
+            document.getElementById(id)?.addEventListener('input', renderBranchHistory);
+            document.getElementById(id)?.addEventListener('change', renderBranchHistory);
+        });
+        ['commAHistorySearch', 'commAStatusFilter', 'commADateFilter'].forEach(id => {
+            document.getElementById(id)?.addEventListener('input', renderCommAHistory);
+            document.getElementById(id)?.addEventListener('change', renderCommAHistory);
+        });
+        ['commBHistorySearch', 'commBStatusFilter', 'commBDateFilter'].forEach(id => {
+            document.getElementById(id)?.addEventListener('input', renderCommBHistory);
+            document.getElementById(id)?.addEventListener('change', renderCommBHistory);
+        });
+
+        function clearAdminHistoryFilters() {
+            document.getElementById('adminHistorySearch').value = '';
+            document.getElementById('adminStatusFilter').value = '';
+            document.getElementById('adminDateFilter').value = '';
+            renderAdminHistory();
+        }
+        function clearBranchHistoryFilters() {
+            document.getElementById('branchHistorySearch').value = '';
+            document.getElementById('branchStatusFilter').value = '';
+            document.getElementById('branchDateFilter').value = '';
+            renderBranchHistory();
+        }
+        function clearCommAFilters() {
+            document.getElementById('commAHistorySearch').value = '';
+            document.getElementById('commAStatusFilter').value = '';
+            document.getElementById('commADateFilter').value = '';
+            renderCommAHistory();
+        }
+        function clearCommBFilters() {
+            document.getElementById('commBHistorySearch').value = '';
+            document.getElementById('commBStatusFilter').value = '';
+            document.getElementById('commBDateFilter').value = '';
+            renderCommBHistory();
+        }
+
+        // ==========================================
+        // 4. MODAL MANAGEMENT & SI / STATUS UPDATER
+        // ==========================================
+        function openOrderModal(groupData) {
+            currentModalOrderGroup = groupData;
+            document.getElementById('modalOrderRefTitle').innerText = `Order: ${groupData.orderRef} (${groupData.branchCode})`;
+            document.getElementById('modalOrderSubtitle').innerText = `Target Delivery: ${groupData.deliveryDate} | SI: ${groupData.siNumber || 'Wala pa'} | Kasalukuyang Status: ${groupData.status.toUpperCase()}`;
+
+            // Set inputs
+            document.getElementById('modalStatusSelect').value = groupData.status || 'placed';
+            document.getElementById('modalSiInput').value = groupData.siNumber || '';
+
+            // Restriction: Only Admin at Commissary ang pwedeng mag-edit ng status at SI number
+            const isManagerOrAdmin = (currentUserRole === 'admin' || currentUserRole === 'commissaryA' || currentUserRole === 'commissaryB');
+            document.getElementById('modalStatusSelect').disabled = !isManagerOrAdmin;
+            document.getElementById('modalSiInput').disabled = !isManagerOrAdmin;
+
+            const tbody = document.getElementById('modalOrderItemsTable');
+            tbody.innerHTML = "";
+
+            groupData.items.forEach((item) => {
+                const priceFormatted = (item.price || 0).toFixed(2);
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight:700; color:#0284c7;">${item.sapItemCode}</td>
+                    <td style="color: var(--text-muted);">${item.branchItemCode}</td>
+                    <td>${item.itemName}</td>
+                    <td>PHP ${priceFormatted}</td>
+                    <td><b>${item.qty}</b> ${item.measurement}</td>
+                    <td>
+                        <button class="btn-action btn-action-primary" onclick="copySingleItemModal('${item.sapItemCode}', '${item.itemName}', '${priceFormatted}', '${item.qty} ${item.measurement}')">
+                            📋 Kopyahin
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('orderDetailsModal').style.display = 'flex';
+        }
+
+        function closeOrderModal() {
+            document.getElementById('orderDetailsModal').style.display = 'none';
+        }
+
+        // I-update ang status at SI Number sa lahat ng items sa ilalim ng order group
+        function updateOrderStatusAndSI() {
+            if (!currentModalOrderGroup || !currentModalOrderGroup.docIds) return;
+
+            const newStatus = document.getElementById('modalStatusSelect').value;
+            const newSi = document.getElementById('modalSiInput').value.trim().toUpperCase();
+
+            const batch = db.batch();
+            currentModalOrderGroup.docIds.forEach(id => {
+                const ref = db.collection("orders").doc(id);
+                batch.update(ref, {
+                    status: newStatus,
+                    siNumber: newSi,
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
+                    updatedBy: currentActiveUser.email
+                });
+            });
+
+            batch.commit().then(() => {
+                alert(`Tagumpay na na-update!
+Status: ${newStatus.toUpperCase()}
+SI Number: ${newSi || 'N/A'}`);
+                currentModalOrderGroup.status = newStatus;
+                currentModalOrderGroup.siNumber = newSi;
+                document.getElementById('modalOrderSubtitle').innerText = `Target Delivery: ${currentModalOrderGroup.deliveryDate} | SI: ${newSi || 'Wala pa'} | Kasalukuyang Status: ${newStatus.toUpperCase()}`;
+            }).catch(err => {
+                alert("Error sa pag-update: " + err.message);
+            });
+        }
+
+        // Copy Handlers
+        function copySingleItemModal(sapCode, name, price, qtyUom) {
+            const textToCopy = `${sapCode}\t${name}\t${price}\t${qtyUom}`;
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                alert(`Nakopya sa clipboard:\n\nCode: ${sapCode}\nDesc: ${name}\nPrice: PHP ${price}\nQty: ${qtyUom}\n\nMaaari mo na itong i-paste sa SAP B1 o resibo!`);
+            }).catch(err => alert("Error sa pagkopya: " + err.message));
+        }
+
+        function copyModalOrderForSAP() {
+            if (!currentModalOrderGroup || !currentModalOrderGroup.items.length) {
+                alert("Walang items na makokopya.");
+                return;
+            }
+
+            let tsvRows = [];
+            currentModalOrderGroup.items.forEach(item => {
+                const sapCode = item.sapItemCode || '';
+                const name = item.itemName || '';
+                const price = (item.price || 0).toFixed(2);
+                const qtyUom = `${item.qty} ${item.measurement}`;
+
+                if (sapCode && name) {
+                    tsvRows.push(`${sapCode}\t${name}\t${price}\t${qtyUom}`);
+                }
+            });
+
+            const clipboardText = tsvRows.join('\n');
+            navigator.clipboard.writeText(clipboardText).then(() => {
+                alert(`Matagumpay na nakopya ang ${tsvRows.length} item(s)!\n\nFormat:\n[SAP Code]  [Description]  [Price]  [Quantity & UoM]\n\nI-paste na ito nang diretso sa SAP B1 o spreadsheet para sa paggawa ng resibo.`);
+            }).catch(err => alert("Error sa pagkopya: " + err.message));
+        }
+
+        // Search Filter (Active Products)
+        const searchInput = document.getElementById('itemSearchInput');
+        const clearBtn = document.getElementById('clearSearchBtn');
+        const noResults = document.getElementById('noResultsMsg');
+
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                const query = this.value.toLowerCase().trim();
+                const rows = document.querySelectorAll('#branchOrderItemsTable .product-row');
+                let visibleCount = 0;
+
+                rows.forEach(row => {
+                    const code = row.querySelector('.item-branch-code').innerText.toLowerCase();
+                    const name = row.querySelector('.item-name').innerText.toLowerCase();
+
+                    if (code.includes(query) || name.includes(query)) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+
+                noResults.style.display = (visibleCount === 0 && rows.length > 0) ? 'block' : 'none';
+            });
+
+            clearBtn.addEventListener('click', () => {
+                searchInput.value = '';
+                searchInput.dispatchEvent(new Event('input'));
+            });
+        }
+
+        document.getElementById('logoutBtn').addEventListener('click', () => auth.signOut());
+    </script>
+</body>
+</html>
