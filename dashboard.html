@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Operations Dashboard</title>
 
-    <!-- Firebase SDK (CDN) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -108,6 +107,8 @@
             margin-bottom: 20px;
             padding-bottom: 12px;
             border-bottom: 1px solid #e2e8f0;
+            flex-wrap: wrap;
+            gap: 12px;
         }
 
         .card-header h3 {
@@ -158,7 +159,6 @@
             border-radius: 5px;
             border: 1px solid transparent;
             cursor: pointer;
-            margin-right: 6px;
         }
 
         .btn-action-primary {
@@ -171,13 +171,19 @@
             background-color: #e2e8f0;
         }
 
-        .btn-action-danger {
-            background-color: #fee2e2;
-            color: #991b1b;
+        .btn-add-cart {
+            background-color: #2563eb;
+            color: #ffffff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 12px;
         }
 
-        .btn-action-danger:hover {
-            background-color: #fecaca;
+        .btn-add-cart:hover {
+            background-color: #1d4ed8;
         }
 
         .cart-summary {
@@ -207,6 +213,43 @@
             text-align: center;
             padding: 50px 0;
             color: #64748b;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .qty-input {
+            width: 70px;
+            padding: 6px;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+        }
+
+        /* Commissary Add Product Form */
+        .product-form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .product-form-grid input, .product-form-grid select {
+            padding: 8px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 14px;
         }
     </style>
 </head>
@@ -246,16 +289,7 @@
                             </tr>
                         </thead>
                         <tbody id="adminUserTable">
-                            <tr>
-                                <td>branch.gb5@gmail.com</td>
-                                <td>GB5</td>
-                                <td>Branch</td>
-                                <td><span class="status-badge status-active">Active</span></td>
-                                <td>
-                                    <button class="btn-action btn-action-primary" onclick="sendResetLink('branch.gb5@gmail.com')">Reset Link</button>
-                                    <button class="btn-action btn-action-danger">Force Logout</button>
-                                </td>
-                            </tr>
+                            <tr><td colspan="5" style="text-align:center; color:#64748b;">Kumukuha ng accounts mula Firestore...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -269,6 +303,12 @@
                     <h3>Branch Order Center (<span id="branchCodeDisplay">-</span>)</h3>
                     <input type="date" id="orderDatePicker" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1;">
                 </div>
+
+                <div class="search-box">
+                    <input type="text" id="itemSearchInput" placeholder="Mag-search ng produkto o item code...">
+                    <button type="button" id="clearSearchBtn" class="btn-action btn-action-primary">I-clear</button>
+                </div>
+
                 <div class="table-responsive">
                     <table>
                         <thead>
@@ -281,28 +321,16 @@
                                 <th>Aksyon</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr>
-                                <td>PRD-001</td>
-                                <td>Marinated Beef Tapa (1kg)</td>
-                                <td>Commissary A (Meat)</td>
-                                <td>350.00</td>
-                                <td><input type="number" min="1" value="1" style="width: 60px; padding: 4px;"></td>
-                                <td><button class="btn-action btn-action-primary">Add to Cart</button></td>
-                            </tr>
-                            <tr>
-                                <td>VEG-102</td>
-                                <td>Fresh Romaine Lettuce (500g)</td>
-                                <td>Commissary B (Veg)</td>
-                                <td>120.00</td>
-                                <td><input type="number" min="1" value="1" style="width: 60px; padding: 4px;"></td>
-                                <td><button class="btn-action btn-action-primary">Add to Cart</button></td>
-                            </tr>
+                        <tbody id="orderItemsTableBody">
+                            <tr><td colspan="6" style="text-align:center; color:#64748b;">Naglo-load ng mga produkto mula sa Firebase...</td></tr>
                         </tbody>
                     </table>
+                    <div id="noResultsMsg" style="display: none; text-align: center; padding: 20px; color: #64748b;">
+                        Walang nahanap na produkto.
+                    </div>
                 </div>
                 <div class="cart-summary">
-                    <button class="btn-order">Place Order</button>
+                    <button class="btn-order" id="placeOrderBtn">Place Order</button>
                 </div>
             </div>
         </div>
@@ -313,7 +341,16 @@
                 <div class="card-header">
                     <h3>Commissary A - Meat & SAP B1 Processing</h3>
                 </div>
-                <p style="color: #64748b;">Dito lilitaw ang mga awtomatikong nai-split na order ng karne para sa SAP B1 mapping.</p>
+                <h4 style="margin-bottom: 12px;">Magdagdag ng Bagong Produkto (Karne)</h4>
+                <form id="addMeatProductForm">
+                    <div class="product-form-grid">
+                        <input type="text" id="meatCode" placeholder="SAP B1 / Item Code" required>
+                        <input type="text" id="meatName" placeholder="Pangalan ng Karne" required>
+                        <input type="number" id="meatPrice" placeholder="Price (PHP)" step="0.01" required>
+                        <input type="text" id="meatUnit" placeholder="Unit (hal. kg, pack)" required>
+                    </div>
+                    <button type="submit" class="btn-order" style="padding: 8px 16px; font-size: 13px;">Save Meat Item</button>
+                </form>
             </div>
         </div>
 
@@ -323,7 +360,16 @@
                 <div class="card-header">
                     <h3>Commissary B - Fresh Produce & Inventory</h3>
                 </div>
-                <p style="color: #64748b;">Dito lilitaw ang mga order para sa mga gulay at Google Sheets export tracking.</p>
+                <h4 style="margin-bottom: 12px;">Magdagdag ng Bagong Produkto (Gulay)</h4>
+                <form id="addVegProductForm">
+                    <div class="product-form-grid">
+                        <input type="text" id="vegCode" placeholder="Item Code" required>
+                        <input type="text" id="vegName" placeholder="Pangalan ng Gulay" required>
+                        <input type="number" id="vegPrice" placeholder="Price (PHP)" step="0.01" required>
+                        <input type="text" id="vegUnit" placeholder="Unit (hal. bundle, crate)" required>
+                    </div>
+                    <button type="submit" class="btn-order" style="padding: 8px 16px; font-size: 13px;">Save Produce Item</button>
+                </form>
             </div>
         </div>
     </div>
@@ -343,43 +389,37 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
 
+        let currentActiveUser = null;
+
         // 5-Minute Inactivity Auto-Logout
-        let inactivityTime = function () {
-            let time;
+        (function() {
+            let timeout;
+            function resetTimer() {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    alert("5 minuto kang walang activity. Awtomatikong nag-logout.");
+                    auth.signOut();
+                }, 300000);
+            }
             window.onload = resetTimer;
             document.onmousemove = resetTimer;
             document.onkeypress = resetTimer;
+        })();
 
-            function logout() {
-                alert("5 minuto kang walang activity. Kusa kang na-logout para sa security.");
-                auth.signOut();
-            }
-
-            function resetTimer() {
-                clearTimeout(time);
-                time = setTimeout(logout, 300000); // 5 mins
-            }
-        };
-        inactivityTime();
-
-        // Authentication & Role Routing
+        // Auth & Routing
         auth.onAuthStateChanged((user) => {
             if (user) {
+                currentActiveUser = user;
                 document.getElementById('userEmailNav').innerText = user.email;
-                const userRef = db.collection("accounts").doc(user.uid);
 
-                userRef.get().then((doc) => {
+                db.collection("accounts").doc(user.uid).get().then((doc) => {
                     document.getElementById('loadingIndicator').style.display = 'none';
 
                     if (doc.exists) {
                         const data = doc.data();
 
-                        if (data.status === "block") {
-                            alert("Ang iyong account ay naka-block.");
-                            auth.signOut();
-                            return;
-                        } else if (data.status === "inactive") {
-                            alert("Ang iyong account ay inactive.");
+                        if (data.status === "block" || data.status === "inactive") {
+                            alert("Account " + data.status + ". Hindi makakapasok.");
                             auth.signOut();
                             return;
                         }
@@ -388,53 +428,156 @@
 
                         if (data.role === "admin") {
                             document.getElementById('adminSection').style.display = 'block';
+                            loadAdminUserTable();
                         } else if (data.role === "branch") {
                             document.getElementById('branchSection').style.display = 'block';
                             document.getElementById('branchCodeDisplay').innerText = data.branchCode || "N/A";
+                            listenToProducts();
                         } else if (data.role === "commissaryA") {
                             document.getElementById('commissaryASection').style.display = 'block';
                         } else if (data.role === "commissaryB") {
                             document.getElementById('commissaryBSection').style.display = 'block';
                         }
                     } else {
-                        // First-time registration as branch
-                        const branchCode = prompt("Unang login! Ilagay ang iyong Branch Code (hal. SO3, GB5, ATC, TOK, TAN):");
+                        const branchCode = prompt("Unang login! Ilagay ang Branch Code (hal. SO3, GB5, ATC):");
                         if (branchCode) {
-                            userRef.set({
+                            db.collection("accounts").doc(user.uid).set({
                                 email: user.email,
                                 role: "branch",
                                 status: "active",
                                 branchCode: branchCode.trim().toUpperCase()
-                            }).then(() => {
-                                alert("Na-save ang Branch Code. Ilo-load ang iyong portal.");
-                                window.location.reload();
-                            });
+                            }).then(() => location.reload());
                         } else {
-                            alert("Kailangan ang Branch Code upang makapasok.");
                             auth.signOut();
                         }
                     }
-                }).catch((error) => {
-                    console.error("Error retrieving user role:", error);
                 });
             } else {
                 window.location.href = "index.html";
             }
         });
 
-        // Logout
-        document.getElementById('logoutBtn').addEventListener('click', () => {
-            auth.signOut();
-        });
+        // Load Products galing sa Firestore
+        function listenToProducts() {
+            db.collection("products").where("status", "==", "active").onSnapshot((snapshot) => {
+                const tbody = document.getElementById('orderItemsTableBody');
+                tbody.innerHTML = "";
 
-        // Password Reset by Admin
-        function sendResetLink(email) {
-            auth.sendPasswordResetEmail(email).then(() => {
-                alert("Naipadala na ang password reset link sa " + email);
-            }).catch((error) => {
-                alert("Error: " + error.message);
+                if (snapshot.empty) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#64748b;">Wala pang naka-register na produkto sa Firestore.</td></tr>';
+                    return;
+                }
+
+                snapshot.forEach((doc) => {
+                    const item = doc.data();
+                    const commissaryLabel = (item.commissary === 'commissaryA') ? 'Commissary A (Meat)' : 'Commissary B (Produce)';
+
+                    const tr = document.createElement('tr');
+                    tr.className = "product-row";
+                    tr.innerHTML = `
+                        <td class="item-code">${item.itemCode || '-'}</td>
+                        <td class="item-name">${item.name || '-'}</td>
+                        <td>${commissaryLabel}</td>
+                        <td>${parseFloat(item.unitPrice || 0).toFixed(2)} / ${item.unit || 'unit'}</td>
+                        <td><input type="number" min="1" value="1" class="qty-input" id="qty-${doc.id}"></td>
+                        <td><button class="btn-add-cart" onclick="addToCart('${doc.id}', '${item.itemCode}', '${item.name}', '${item.commissary}', ${item.unitPrice})">Add to Cart</button></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
             });
         }
+
+        // Live Search Filter
+        const searchInput = document.getElementById('itemSearchInput');
+        const clearBtn = document.getElementById('clearSearchBtn');
+        const noResults = document.getElementById('noResultsMsg');
+
+        searchInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase().trim();
+            const rows = document.querySelectorAll('#orderItemsTableBody .product-row');
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const code = row.querySelector('.item-code').innerText.toLowerCase();
+                const name = row.querySelector('.item-name').innerText.toLowerCase();
+
+                if (code.includes(query) || name.includes(query)) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            noResults.style.display = (visibleCount === 0 && rows.length > 0) ? 'block' : 'none';
+        });
+
+        clearBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            searchInput.dispatchEvent(new Event('input'));
+        });
+
+        // Add Product: Commissary A (Meat)
+        document.getElementById('addMeatProductForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            db.collection("products").add({
+                itemCode: document.getElementById('meatCode').value.trim().toUpperCase(),
+                name: document.getElementById('meatName').value.trim(),
+                unitPrice: parseFloat(document.getElementById('meatPrice').value),
+                unit: document.getElementById('meatUnit').value.trim(),
+                commissary: "commissaryA",
+                status: "active"
+            }).then(() => {
+                alert("Meat item added successfully!");
+                this.reset();
+            });
+        });
+
+        // Add Product: Commissary B (Produce)
+        document.getElementById('addVegProductForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            db.collection("products").add({
+                itemCode: document.getElementById('vegCode').value.trim().toUpperCase(),
+                name: document.getElementById('vegName').value.trim(),
+                unitPrice: parseFloat(document.getElementById('vegPrice').value),
+                unit: document.getElementById('vegUnit').value.trim(),
+                commissary: "commissaryB",
+                status: "active"
+            }).then(() => {
+                alert("Produce item added successfully!");
+                this.reset();
+            });
+        });
+
+        // Cart & Order Placeholders
+        function addToCart(docId, code, name, comm, price) {
+            const qty = document.getElementById(`qty-${docId}`).value;
+            alert(`Nai-add sa cart: ${qty} x ${name} (${code})`);
+        }
+
+        // Admin Table Loading
+        function loadAdminUserTable() {
+            db.collection("accounts").onSnapshot((snapshot) => {
+                const tbody = document.getElementById('adminUserTable');
+                tbody.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const u = doc.data();
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${u.email}</td>
+                        <td>${u.branchCode || '-'}</td>
+                        <td>${u.role}</td>
+                        <td><span class="status-badge status-${u.status}">${u.status}</span></td>
+                        <td>
+                            <button class="btn-action btn-action-primary" onclick="auth.sendPasswordResetEmail('${u.email}').then(() => alert('Reset link sent!'))">Reset Link</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
+        }
+
+        document.getElementById('logoutBtn').addEventListener('click', () => auth.signOut());
     </script>
 </body>
 </html>
