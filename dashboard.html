@@ -119,33 +119,34 @@
         }
 
         .btn-kebab {
-            background: none;
+            background: rgba(255, 255, 255, 0.08);
             border: 1px solid rgba(255, 255, 255, 0.2);
             color: #ffffff;
-            width: 38px;
-            height: 38px;
+            width: 40px;
+            height: 40px;
             border-radius: 8px;
-            font-size: 20px;
+            font-size: 22px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: background 0.2s;
+            user-select: none;
         }
 
-        .btn-kebab:hover {
-            background: rgba(255, 255, 255, 0.1);
+        .btn-kebab:hover, .btn-kebab:active {
+            background: rgba(255, 255, 255, 0.2);
         }
 
         .kebab-dropdown {
             position: absolute;
-            top: 48px;
+            top: 50px;
             right: 0;
             background: var(--dropdown-bg);
             border: 1px solid var(--card-border);
             border-radius: 10px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.25);
-            width: 240px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            width: 250px;
             display: none;
             flex-direction: column;
             overflow: hidden;
@@ -153,7 +154,7 @@
         }
 
         .kebab-dropdown.show {
-            display: flex;
+            display: flex !important;
         }
 
         .kebab-dropdown-item {
@@ -169,6 +170,7 @@
             align-items: center;
             gap: 10px;
             border-bottom: 1px solid var(--table-border);
+            width: 100%;
         }
 
         .kebab-dropdown-item:last-child {
@@ -465,13 +467,7 @@
         .tag-active { background-color: #dcfce7; color: #15803d; }
         .tag-inactive { background-color: #fee2e2; color: #991b1b; }
         .tag-outofstock { background-color: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; }
-        .tag-rush { background-color: #ffedd5; color: #c2410c; border: 1px solid #fed7aa; animation: pulse 2s infinite; }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.6; }
-            100% { opacity: 1; }
-        }
+        .tag-rush { background-color: #ffedd5; color: #c2410c; border: 1px solid #fed7aa; }
 
         .status-placed { background-color: #dbeafe; color: #1e40af; }
         .status-processing { background-color: #fef3c7; color: #92400e; }
@@ -551,12 +547,6 @@
             display: none;
             z-index: 9999;
             max-width: 380px;
-            animation: slideIn 0.3s ease;
-        }
-
-        @keyframes slideIn {
-            from { transform: translateY(30px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
         }
 
         @media print {
@@ -603,22 +593,22 @@
         <div class="user-panel">
             <span class="user-email" id="userEmailNav">checking session...</span>
 
-            <button class="btn-kebab" id="kebabBtn" title="Menu ng Aksyon" onclick="toggleKebabMenu(event)">⋮</button>
+            <button class="btn-kebab" id="kebabBtn" title="Menu ng Aksyon" type="button">⋮</button>
 
             <div class="kebab-dropdown" id="kebabDropdown">
-                <button class="kebab-dropdown-item" onclick="openProductListModal()">
+                <button class="kebab-dropdown-item" type="button" onclick="openProductListModal()">
                     <span>📦</span> Product List & Stock Availability
                 </button>
-                <button class="kebab-dropdown-item" onclick="scrollToSection('operations')">
+                <button class="kebab-dropdown-item" type="button" onclick="scrollToSection('operations')">
                     <span>📋</span> Operations (Active Orders)
                 </button>
-                <button class="kebab-dropdown-item" onclick="scrollToSection('history')">
+                <button class="kebab-dropdown-item" type="button" onclick="scrollToSection('history')">
                     <span>📜</span> Transaction History
                 </button>
-                <button class="kebab-dropdown-item" onclick="openProfileModal()">
+                <button class="kebab-dropdown-item" type="button" onclick="openProfileModal()">
                     <span>👤</span> Mag-edit ng Profile
                 </button>
-                <button class="kebab-dropdown-item" style="color: #ef4444;" onclick="auth.signOut()">
+                <button class="kebab-dropdown-item" type="button" style="color: #ef4444; font-weight: 700;" onclick="forceLogoutUser()">
                     <span>🚪</span> Mag-logout
                 </button>
             </div>
@@ -640,9 +630,7 @@
             <h3>Ikinakarga ang iyong dashboard...</h3>
         </div>
 
-        <!-- ==========================================
-             1. ADMIN / HEAD OFFICE
-             ========================================== -->
+        <!-- 1. ADMIN SECTION -->
         <div id="adminSection" class="role-section">
             <div class="card" id="adminProductCard">
                 <div class="card-header">
@@ -726,9 +714,7 @@
             </div>
         </div>
 
-        <!-- ==========================================
-             2. BRANCH ORDER & HISTORY VIEW
-             ========================================== -->
+        <!-- 2. BRANCH SECTION -->
         <div id="branchSection" class="role-section">
             <div class="card" id="branchOrderingCard">
                 <div class="card-header">
@@ -835,7 +821,7 @@
                         </div>
 
                         <div style="display: flex; justify-content: flex-end; width: 100%;">
-                            <button class="btn-order" id="placeOrderBtn">Confirm & Place Order</button>
+                            <button class="btn-order" id="placeOrderBtn" type="button">Confirm & Place Order</button>
                         </div>
                     </div>
                 </div>
@@ -923,9 +909,7 @@
             </div>
         </div>
 
-        <!-- ==========================================
-             3. COMMISSARY A (MEAT / SAP B1)
-             ========================================= -->
+        <!-- 3. COMMISSARY A SECTION -->
         <div id="commissaryASection" class="role-section">
             <div class="card" id="commAOperationsCard">
                 <div class="card-header">
@@ -982,9 +966,7 @@
             </div>
         </div>
 
-        <!-- ==========================================
-             4. COMMISSARY B (PRODUCE / INVENTORY)
-             ========================================== -->
+        <!-- 4. COMMISSARY B SECTION -->
         <div id="commissaryBSection" class="role-section">
             <div class="card" id="commBOperationsCard">
                 <div class="card-header">
@@ -1042,9 +1024,7 @@
         </div>
     </div>
 
-    <!-- ==========================================
-         MODAL 1: PRODUCT LIST & STOCK AVAILABILITY MODAL
-         ========================================== -->
+    <!-- MODAL 1: PRODUCT LIST & STOCK AVAILABILITY MODAL -->
     <div id="productListModal" class="modal-overlay">
         <div class="modal-content" style="max-width: 1000px;">
             <div class="modal-header">
@@ -1052,7 +1032,7 @@
                     <h3 style="font-size: 18px;">📦 Master Product List & Stock Control</h3>
                     <p style="font-size: 13px; color: var(--text-muted);">I-toggle ang "Out of Stock" (para hindi ma-order pansamantala) o i-edit ang presyo at impormasyon.</p>
                 </div>
-                <button class="modal-close-btn" onclick="closeProductListModal()">&times;</button>
+                <button class="modal-close-btn" type="button" onclick="closeProductListModal()">&times;</button>
             </div>
 
             <div style="margin-bottom: 14px;">
@@ -1081,14 +1061,12 @@
         </div>
     </div>
 
-    <!-- ==========================================
-         MODAL 2: EDIT SINGLE PRODUCT MODAL
-         ========================================== -->
+    <!-- MODAL 2: EDIT SINGLE PRODUCT MODAL -->
     <div id="editProductModal" class="modal-overlay">
         <div class="modal-content" style="max-width: 600px;">
             <div class="modal-header">
                 <h3 style="font-size: 18px;">✏️ I-edit ang Produkto (<span id="editModalBranchCodeDisplay">-</span>)</h3>
-                <button class="modal-close-btn" onclick="closeEditProductModal()">&times;</button>
+                <button class="modal-close-btn" type="button" onclick="closeEditProductModal()">&times;</button>
             </div>
             <form id="editProductForm">
                 <input type="hidden" id="editDocId">
@@ -1147,14 +1125,12 @@
         </div>
     </div>
 
-    <!-- ==========================================
-         MODAL 3: PROFILE MODAL
-         ========================================== -->
+    <!-- MODAL 3: PROFILE MODAL -->
     <div id="profileModal" class="modal-overlay">
         <div class="modal-content" style="max-width: 500px;">
             <div class="modal-header">
                 <h3 style="font-size: 18px;">👤 Profile at Account Settings</h3>
-                <button class="modal-close-btn" onclick="closeProfileModal()">&times;</button>
+                <button class="modal-close-btn" type="button" onclick="closeProfileModal()">&times;</button>
             </div>
             <div style="margin-bottom: 14px;">
                 <label class="form-label">Email Address</label>
@@ -1173,18 +1149,16 @@
                 <input type="text" id="profilePhone" placeholder="hal. 0917-xxx-xxxx" style="width: 100%;">
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 18px;">
-                <button class="btn-action btn-action-primary" onclick="sendPasswordResetFromProfile()">🔑 I-reset ang Password</button>
+                <button class="btn-action btn-action-primary" type="button" onclick="sendPasswordResetFromProfile()">🔑 I-reset ang Password</button>
                 <div style="display: flex; gap: 8px;">
-                    <button class="btn-action btn-action-primary" onclick="closeProfileModal()">Isara</button>
-                    <button class="btn-order" onclick="saveUserProfile()">💾 I-save</button>
+                    <button class="btn-action btn-action-primary" type="button" onclick="closeProfileModal()">Isara</button>
+                    <button class="btn-order" type="button" onclick="saveUserProfile()">💾 I-save</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- ==========================================
-         MODAL 4: ORDER DETAILS, RECEIVING, BILLING & PRINT DR
-         ========================================== -->
+    <!-- MODAL 4: ORDER DETAILS & RECEIVING -->
     <div id="orderDetailsModal" class="modal-overlay">
         <div class="modal-content" id="printableOrderModalContent">
             <div class="modal-header">
@@ -1192,7 +1166,7 @@
                     <h3 id="modalOrderRefTitle" style="font-size: 18px;">Order Details</h3>
                     <p id="modalOrderSubtitle" style="font-size: 13px; color: var(--text-muted);">-</p>
                 </div>
-                <button class="modal-close-btn" onclick="closeOrderModal()">&times;</button>
+                <button class="modal-close-btn" type="button" onclick="closeOrderModal()">&times;</button>
             </div>
 
             <div id="modalManagementPanel" style="background: var(--cart-bg); border: 1px solid var(--card-border); padding: 14px; border-radius: 8px; margin-bottom: 16px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px;">
@@ -1208,28 +1182,28 @@
                     <label style="font-size: 12px; font-weight: 600; margin-left: 6px;">SI Number:</label>
                     <input type="text" id="modalSiInput" placeholder="hal. SI-2026-001" style="padding: 6px 10px; font-size: 13px; width: 140px;">
 
-                    <button class="btn-action btn-action-primary" onclick="updateCommissaryStatus()">💾 I-update</button>
+                    <button class="btn-action btn-action-primary" type="button" onclick="updateCommissaryStatus()">💾 I-update</button>
                 </div>
 
                 <div id="branchReceivingControls" style="display: none; align-items: center; gap: 8px; flex-wrap: wrap;">
                     <span style="font-size: 12px; font-weight: 600;">Branch Action:</span>
-                    <button class="btn-action btn-action-success" onclick="confirmBranchDelivery('received')">
+                    <button class="btn-action btn-action-success" type="button" onclick="confirmBranchDelivery('received')">
                         ✅ Received Complete
                     </button>
-                    <button class="btn-action btn-action-warning" onclick="openReportProblemModal()">
+                    <button class="btn-action btn-action-warning" type="button" onclick="openReportProblemModal()">
                         ⚠️ May Problema / Damage
                     </button>
-                    <button class="btn-action btn-action-danger" onclick="confirmBranchDelivery('rejected')">
+                    <button class="btn-action btn-action-danger" type="button" onclick="confirmBranchDelivery('rejected')">
                         ❌ Hindi Tinanggap
                     </button>
                 </div>
 
                 <div style="display: flex; gap: 8px;">
-                    <button class="btn-print" onclick="window.print()">
+                    <button class="btn-print" type="button" onclick="window.print()">
                         🖨️ Print Delivery Receipt (DR)
                     </button>
                     <div id="modalCopyBtnContainer">
-                        <button class="btn-copy-sap" id="btnCopySapAll" onclick="copyModalOrderForSAP()">
+                        <button class="btn-copy-sap" id="btnCopySapAll" type="button" onclick="copyModalOrderForSAP()">
                             📋 Kopyahin para sa SAP / Sheets
                         </button>
                     </div>
@@ -1288,9 +1262,7 @@
         </div>
     </div>
 
-    <!-- ==========================================
-         MODAL 5: REPORT PROBLEM (MULTI-PHOTO & DAMAGE QUANTITY)
-         ========================================== -->
+    <!-- MODAL 5: REPORT PROBLEM -->
     <div id="reportProblemModal" class="modal-overlay">
         <div class="modal-content" style="max-width: 720px;">
             <div class="modal-header">
@@ -1298,7 +1270,7 @@
                     <h3 style="font-size: 18px; color: #dc2626;">⚠️ Report Delivery Issue / Damage</h3>
                     <p id="reportModalSubtitle" style="font-size: 13px; color: var(--text-muted);">-</p>
                 </div>
-                <button class="modal-close-btn" onclick="closeReportProblemModal()">&times;</button>
+                <button class="modal-close-btn" type="button" onclick="closeReportProblemModal()">&times;</button>
             </div>
 
             <form id="reportProblemForm">
@@ -1359,20 +1331,70 @@
             grandTotal: 0
         };
 
-        // 5-Min Auto Logout
-        (function() {
-            let timeout;
-            function resetTimer() {
-                clearTimeout(timeout);
-                timeout = setTimeout(() => {
-                    alert("5 minuto kang walang activity. Kusa kang na-logout para sa security.");
-                    auth.signOut();
-                }, 300000);
+        // ==========================================
+        // MATATAG NA 5-MIN INACTIVITY AUTO-LOGOUT
+        // ==========================================
+        let inactivityTimer = null;
+        function resetInactivityTimer() {
+            clearTimeout(inactivityTimer);
+            inactivityTimer = setTimeout(() => {
+                alert("5 minuto kang walang aktibidad. Kusa kang na-logout para sa seguridad.");
+                forceLogoutUser();
+            }, 300000); // 5 minuto
+        }
+
+        ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click'].forEach(evt => {
+            window.addEventListener(evt, resetInactivityTimer, { passive: true });
+        });
+        resetInactivityTimer();
+
+        function forceLogoutUser() {
+            auth.signOut().then(() => {
+                window.location.replace("index.html");
+            }).catch(() => {
+                window.location.href = "index.html";
+            });
+        }
+
+        // ==========================================
+        // 100% GUMAGANANG KEBAB MENU (⋮)
+        // ==========================================
+        document.addEventListener("DOMContentLoaded", function() {
+            const kebabBtn = document.getElementById('kebabBtn');
+            const kebabDropdown = document.getElementById('kebabDropdown');
+
+            if (kebabBtn && kebabDropdown) {
+                kebabBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    kebabDropdown.classList.toggle('show');
+                });
             }
-            window.onload = resetTimer;
-            document.onmousemove = resetTimer;
-            document.onkeypress = resetTimer;
-        })();
+
+            document.addEventListener('click', function(e) {
+                if (kebabDropdown && !kebabDropdown.contains(e.target) && e.target !== kebabBtn) {
+                    kebabDropdown.classList.remove('show');
+                }
+            });
+        });
+
+        function scrollToSection(type) {
+            const dropdown = document.getElementById('kebabDropdown');
+            if (dropdown) dropdown.classList.remove('show');
+
+            let targetId = '';
+            if (currentUserRole === 'commissaryA') {
+                targetId = (type === 'operations') ? 'commAOperationsCard' : 'commAHistoryCard';
+            } else if (currentUserRole === 'commissaryB') {
+                targetId = (type === 'operations') ? 'commBOperationsCard' : 'commBHistoryCard';
+            } else if (currentUserRole === 'admin') {
+                targetId = (type === 'operations') ? 'adminProductCard' : 'adminHistoryCard';
+            } else {
+                targetId = (type === 'operations') ? 'branchOrderingCard' : 'branchHistoryCard';
+            }
+
+            const el = document.getElementById(targetId);
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }
 
         // ==========================================
         // AUDIO SYNTHESIZER CHIME
@@ -1406,7 +1428,7 @@
                     osc.stop(now + 0.6);
                 }
             } catch (e) {
-                console.log("Audio alert blocked until user interaction:", e);
+                console.log("Audio not allowed yet:", e);
             }
         }
 
@@ -1429,38 +1451,8 @@
         }
 
         // ==========================================
-        // KEBAB (⋮) DROPDOWN MENU HANDLERS
+        // AUTH & ROUTER
         // ==========================================
-        function toggleKebabMenu(e) {
-            e.stopPropagation();
-            const menu = document.getElementById('kebabDropdown');
-            menu.classList.toggle('show');
-        }
-
-        document.addEventListener('click', function(e) {
-            const menu = document.getElementById('kebabDropdown');
-            if (menu && menu.classList.contains('show')) {
-                menu.classList.remove('show');
-            }
-        });
-
-        function scrollToSection(type) {
-            document.getElementById('kebabDropdown').classList.remove('show');
-            let targetId = '';
-            if (currentUserRole === 'commissaryA') {
-                targetId = (type === 'operations') ? 'commAOperationsCard' : 'commAHistoryCard';
-            } else if (currentUserRole === 'commissaryB') {
-                targetId = (type === 'operations') ? 'commBOperationsCard' : 'commBHistoryCard';
-            } else if (currentUserRole === 'admin') {
-                targetId = (type === 'operations') ? 'adminProductCard' : 'adminHistoryCard';
-            } else {
-                targetId = (type === 'operations') ? 'branchOrderingCard' : 'branchHistoryCard';
-            }
-
-            const el = document.getElementById(targetId);
-            if (el) el.scrollIntoView({ behavior: 'smooth' });
-        }
-
         auth.onAuthStateChanged((user) => {
             if (user) {
                 currentActiveUser = user;
@@ -1475,7 +1467,7 @@
 
                         if (data.status === "block" || data.status === "inactive") {
                             alert("Account " + data.status + ". Hindi makakapasok.");
-                            auth.signOut();
+                            forceLogoutUser();
                             return;
                         }
 
@@ -1510,12 +1502,15 @@
                                 branchCode: branchCode.trim().toUpperCase()
                             }).then(() => location.reload());
                         } else {
-                            auth.signOut();
+                            forceLogoutUser();
                         }
                     }
+                }).catch(err => {
+                    alert("Koneksyon sa account error: " + err.message);
+                    document.getElementById('loadingIndicator').style.display = 'none';
                 });
             } else {
-                window.location.href = "index.html";
+                window.location.replace("index.html");
             }
         });
 
@@ -1533,7 +1528,8 @@
         }
 
         function openProductListModal() {
-            document.getElementById('kebabDropdown').classList.remove('show');
+            const dropdown = document.getElementById('kebabDropdown');
+            if (dropdown) dropdown.classList.remove('show');
             document.getElementById('productListModal').style.display = 'flex';
             renderProductListModalTable();
         }
@@ -1620,7 +1616,7 @@
         }
 
         // ==========================================
-        // EDIT SINGLE PRODUCT MODAL & SAVER
+        // EDIT SINGLE PRODUCT
         // ==========================================
         function openEditSingleProductModal(productData) {
             document.getElementById('editDocId').value = productData.id;
@@ -1679,7 +1675,9 @@
         // PROFILE MODAL
         // ==========================================
         function openProfileModal() {
-            document.getElementById('kebabDropdown').classList.remove('show');
+            const dropdown = document.getElementById('kebabDropdown');
+            if (dropdown) dropdown.classList.remove('show');
+
             document.getElementById('profileEmailDisplay').value = currentActiveUser ? currentActiveUser.email : '';
             document.getElementById('profileRoleDisplay').value = currentUserRole.toUpperCase();
 
@@ -1687,4 +1685,1107 @@
                 if (doc.exists) {
                     const data = doc.data();
                     document.getElementById('profileDisplayName').value = data.displayName || '';
-                    document.getElementById('profilePhone').value = data.phone ||
+                    document.getElementById('profilePhone').value = data.phone || '';
+                }
+            });
+
+            document.getElementById('profileModal').style.display = 'flex';
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profileModal').style.display = 'none';
+        }
+
+        function saveUserProfile() {
+            const displayName = document.getElementById('profileDisplayName').value.trim();
+            const phone = document.getElementById('profilePhone').value.trim();
+
+            db.collection("accounts").doc(currentActiveUser.uid).update({
+                displayName: displayName,
+                phone: phone,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                alert("Nai-save ang iyong profile impormasyon!");
+                closeProfileModal();
+            }).catch(err => {
+                alert("Error sa pag-save: " + err.message);
+            });
+        }
+
+        function sendPasswordResetFromProfile() {
+            if (confirm("Gusto mo bang magpadala ng Password Reset Link sa iyong email (" + currentActiveUser.email + ")?")) {
+                auth.sendPasswordResetEmail(currentActiveUser.email).then(() => {
+                    alert("Naipadala na ang Password Reset email!");
+                }).catch(err => {
+                    alert("Error: " + err.message);
+                });
+            }
+        }
+
+        // ==========================================
+        // ADMIN PRODUCTS LISTENER
+        // ==========================================
+        function listenToAdminMasterProducts() {
+            db.collection("products").onSnapshot((snapshot) => {
+                const tbody = document.getElementById('adminProductsMasterTable');
+                tbody.innerHTML = '';
+                if (snapshot.empty) {
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--text-muted);">Wala pang produkto.</td></tr>';
+                    return;
+                }
+                snapshot.forEach(doc => {
+                    const p = doc.data();
+                    const statusVal = p.status || 'active';
+                    const stockVal = p.stockStatus || 'in_stock';
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><b>${p.branchCode}</b></td>
+                        <td><b>${p.sapCode}</b></td>
+                        <td>${p.name}</td>
+                        <td>PHP ${(p.price || 0).toFixed(2)}</td>
+                        <td><span class="tag-pill ${p.commissary === 'commissaryA' ? 'tag-meat' : 'tag-veg'}">${p.commissary === 'commissaryA' ? 'Meat (SAP)' : 'Produce'}</span></td>
+                        <td><span class="tag-pill ${stockVal === 'in_stock' ? 'tag-active' : 'tag-outofstock'}">${stockVal === 'in_stock' ? 'IN STOCK' : 'OUT OF STOCK'}</span></td>
+                        <td><span class="tag-pill ${statusVal === 'active' ? 'tag-active' : 'tag-inactive'}">${statusVal.toUpperCase()}</span></td>
+                        <td>
+                            <button class="btn-action btn-action-primary" onclick='openEditSingleProductModal(${JSON.stringify(p).replace(/'/g, "&apos;")})'>Edit</button>
+                            <button class="btn-action ${statusVal === 'active' ? 'btn-action-warning' : 'btn-action-success'}" onclick="toggleProductStatus('${doc.id}', '${statusVal}')">
+                                ${statusVal === 'active' ? 'I-inactive' : 'I-activate'}
+                            </button>
+                            <button class="btn-action btn-action-danger" onclick="deleteProduct('${doc.id}')">Burahin</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
+        }
+
+        function deleteProduct(docId) {
+            if (confirm("Gusto mo bang burahin ang produktong ito?")) {
+                db.collection("products").doc(docId).delete();
+            }
+        }
+
+        function toggleProductStatus(docId, currentStatus) {
+            const newStatus = (currentStatus === 'active') ? 'inactive' : 'active';
+            const actionText = (newStatus === 'inactive') ? 'I-inactive' : 'I-activate';
+
+            if (!confirm(`Sigurado ka bang nais mong ${actionText} ang produktong ito?`)) return;
+
+            db.collection("products").doc(docId).update({
+                status: newStatus,
+                statusUpdatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                updatedBy: currentActiveUser.email
+            }).then(() => {
+                alert(`Naging ${newStatus.toUpperCase()} na ang produkto.`);
+            }).catch(err => {
+                alert("Error sa pag-update: " + err.message);
+            });
+        }
+
+        // ==========================================
+        // BRANCH ORDERING & COMPUTATION
+        // ==========================================
+        function listenToBranchProducts() {
+            db.collection("products").onSnapshot((snapshot) => {
+                const activeTbody = document.getElementById('branchOrderItemsTable');
+                const inactiveTbody = document.getElementById('branchInactiveItemsTable');
+                activeTbody.innerHTML = "";
+                inactiveTbody.innerHTML = "";
+
+                let activeCount = 0;
+                let inactiveCount = 0;
+
+                snapshot.forEach((doc) => {
+                    const item = doc.data();
+                    const status = item.status || 'active';
+                    const isOutOfStock = (item.stockStatus === 'out_of_stock');
+
+                    if (status === 'active') {
+                        activeCount++;
+                        const tr = document.createElement('tr');
+                        tr.className = "product-row " + (isOutOfStock ? "out-of-stock-row" : "");
+                        tr.innerHTML = `
+                            <td class="item-branch-code"><b>${item.branchCode}</b></td>
+                            <td class="item-name">${item.name}</td>
+                            <td>PHP ${(item.price || 0).toFixed(2)}</td>
+                            <td><span class="tag-pill ${item.commissary === 'commissaryA' ? 'tag-meat' : 'tag-veg'}">${item.commissary === 'commissaryA' ? 'Meat' : 'Produce'}</span></td>
+                            <td>
+                                <span class="tag-pill ${isOutOfStock ? 'tag-outofstock' : 'tag-active'}">
+                                    ${isOutOfStock ? 'OUT OF STOCK' : 'AVAILABLE'}
+                                </span>
+                            </td>
+                            <td>${item.wholeUnit}</td>
+                            <td>${item.looseUnit}</td>
+                            <td>
+                                <div class="order-qty-group">
+                                    <input type="number" step="any" min="0.01" value="1" id="qty-${doc.id}" ${isOutOfStock ? 'disabled' : ''}>
+                                    <select id="type-${doc.id}" ${isOutOfStock ? 'disabled' : ''}>
+                                        <option value="Whole (${item.wholeUnit})">Whole (${item.wholeUnit})</option>
+                                        <option value="Loose (${item.looseUnit})">Loose (${item.looseUnit})</option>
+                                    </select>
+                                </div>
+                            </td>
+                            <td>
+                                <button class="btn-add-cart" ${isOutOfStock ? 'disabled' : ''} onclick="addToCart('${item.branchCode}', '${item.sapCode}', '${item.name}', ${item.price || 0}, '${item.commissary}', 'qty-${doc.id}', 'type-${doc.id}')">
+                                    ${isOutOfStock ? '❌ Ubos na' : '🛒 Add to Cart'}
+                                </button>
+                            </td>
+                            <td>
+                                <button class="btn-action btn-action-warning" onclick="toggleProductStatus('${doc.id}', 'active')" title="I-inactive para mawala sa search at ordering table">
+                                    Mark Inactive
+                                </button>
+                            </td>
+                        `;
+                        activeTbody.appendChild(tr);
+                    } else {
+                        inactiveCount++;
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td><b>${item.branchCode}</b></td>
+                            <td>${item.sapCode}</td>
+                            <td>${item.name}</td>
+                            <td><span class="tag-pill ${item.commissary === 'commissaryA' ? 'tag-meat' : 'tag-veg'}">${item.commissary === 'commissaryA' ? 'Meat' : 'Produce'}</span></td>
+                            <td>${item.wholeUnit} / ${item.looseUnit}</td>
+                            <td>
+                                <button class="btn-action btn-action-success" onclick="toggleProductStatus('${doc.id}', 'inactive')">
+                                    ✓ I-reactivate
+                                </button>
+                            </td>
+                        `;
+                        inactiveTbody.appendChild(tr);
+                    }
+                });
+
+                document.getElementById('inactiveCountBadge').innerText = inactiveCount;
+
+                if (activeCount === 0) {
+                    activeTbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color: var(--text-muted);">Walang aktibong produkto na available para sa order.</td></tr>';
+                }
+                if (inactiveCount === 0) {
+                    inactiveTbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--text-muted);">Walang inactive na produkto sa kasalukuyan.</td></tr>';
+                }
+            });
+        }
+
+        function toggleInactiveDrawer() {
+            const body = document.getElementById('inactiveDrawerBody');
+            const arrow = document.getElementById('drawerArrow');
+            if (body.style.display === 'none') {
+                body.style.display = 'block';
+                arrow.innerText = '▲ Itago ang Listahan';
+            } else {
+                body.style.display = 'none';
+                arrow.innerText = '▼ I-toggle ang Listahan';
+            }
+        }
+
+        function addToCart(branchCode, sapCode, name, price, commissary, qtyId, typeId) {
+            const qtyVal = parseFloat(document.getElementById(qtyId).value);
+            const typeVal = document.getElementById(typeId).value;
+
+            if (!qtyVal || qtyVal <= 0) {
+                alert("Mangyaring maglagay ng wastong dami (quantity).");
+                return;
+            }
+
+            cart.push({
+                branchCode: branchCode,
+                sapCode: sapCode,
+                name: name,
+                price: price,
+                commissary: commissary,
+                qty: qtyVal,
+                measurementChoice: typeVal
+            });
+
+            renderCart();
+        }
+
+        function calculateCartTotals() {
+            let gross = 0;
+            cart.forEach(item => {
+                gross += (item.qty * item.price);
+            });
+
+            const discountVal = parseFloat(document.getElementById('cartDiscountInput')?.value) || 0;
+            const vatOption = document.getElementById('cartVatOption')?.value || "none";
+
+            let taxableBase = Math.max(0, gross - discountVal);
+            let vatAmount = 0;
+            let netTotal = taxableBase;
+
+            if (vatOption === "exclusive") {
+                vatAmount = taxableBase * 0.12;
+                netTotal = taxableBase + vatAmount;
+                document.getElementById('cartVatLabel').innerText = "VAT Exclusive (+12%):";
+            } else if (vatOption === "inclusive") {
+                vatAmount = taxableBase - (taxableBase / 1.12);
+                netTotal = taxableBase;
+                document.getElementById('cartVatLabel').innerText = "VAT Inclusive (12% Component):";
+            } else {
+                vatAmount = 0;
+                netTotal = taxableBase;
+                document.getElementById('cartVatLabel').innerText = "VAT (0% / Exempt):";
+            }
+
+            currentCartBilling = {
+                grossSubtotal: gross,
+                discount: discountVal,
+                vatOption: vatOption,
+                vatAmount: vatAmount,
+                grandTotal: netTotal
+            };
+
+            document.getElementById('cartGrossSubtotal').innerText = gross.toFixed(2);
+            document.getElementById('cartDiscountDisplay').innerText = discountVal.toFixed(2);
+            document.getElementById('cartVatAmount').innerText = vatAmount.toFixed(2);
+            document.getElementById('cartNetTotal').innerText = netTotal.toFixed(2);
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cartContainer');
+            const tbody = document.getElementById('cartTableBody');
+            tbody.innerHTML = '';
+
+            if (cart.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+
+            container.style.display = 'block';
+
+            cart.forEach((item, index) => {
+                const sub = (item.qty * item.price);
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${item.branchCode}</td>
+                    <td><b>${item.sapCode}</b></td>
+                    <td>${item.name}</td>
+                    <td>PHP ${item.price.toFixed(2)}</td>
+                    <td>${item.measurementChoice}</td>
+                    <td><b>${item.qty}</b></td>
+                    <td>PHP ${sub.toFixed(2)}</td>
+                    <td><button class="btn-action btn-action-danger" onclick="removeFromCart(${index})">Alisin</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('cartCount').innerText = cart.length;
+            calculateCartTotals();
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            renderCart();
+        }
+
+        document.getElementById('placeOrderBtn')?.addEventListener('click', function() {
+            const deliveryDate = document.getElementById('orderDatePicker').value;
+            const isRush = document.getElementById('isRushOrderCheckbox').checked;
+
+            if (!deliveryDate) {
+                alert("Pumili muna ng Target Delivery Date.");
+                return;
+            }
+            if (cart.length === 0) {
+                alert("Walang laman ang iyong cart.");
+                return;
+            }
+
+            calculateCartTotals();
+            const orderRef = "ORD-" + Date.now().toString().slice(-6);
+            const now = new Date();
+            const formattedOrderTime = now.toLocaleDateString() + " " + now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+            const batch = db.batch();
+
+            cart.forEach((item) => {
+                const docRef = db.collection("orders").doc();
+                batch.set(docRef, {
+                    orderRef: orderRef,
+                    siNumber: "",
+                    branchCode: currentUserBranchCode,
+                    userEmail: currentActiveUser.email,
+                    branchItemCode: item.branchCode,
+                    sapItemCode: item.sapCode,
+                    itemName: item.name,
+                    price: item.price,
+                    qty: item.qty,
+                    subtotal: (item.qty * item.price),
+                    measurement: item.measurementChoice,
+                    commissary: item.commissary,
+                    orderPlacedDate: formattedOrderTime,
+                    deliveryDate: deliveryDate,
+                    isRush: isRush,
+                    status: "placed",
+                    billing: currentCartBilling,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            });
+
+            batch.commit().then(() => {
+                alert(`Order Success! Reference: ${orderRef}\nNai-record na ang order kasama ang eksaktong petsa at oras ng pag-order.`);
+                cart = [];
+                document.getElementById('isRushOrderCheckbox').checked = false;
+                renderCart();
+            }).catch(err => {
+                alert("Error sa pag-place ng order: " + err.message);
+            });
+        });
+
+        // ==========================================
+        // ORDERS REAL-TIME LISTENER & GROUPING & SOUND ALERTS
+        // ==========================================
+        function listenToAllOrders() {
+            db.collection("orders").orderBy("timestamp", "desc").onSnapshot((snapshot) => {
+                const changes = snapshot.docChanges();
+
+                if (!isInitialOrdersLoad) {
+                    changes.forEach(change => {
+                        if (change.type === "added") {
+                            const newOrder = change.doc.data();
+                            if (currentUserRole !== 'branch' && newOrder.status === 'placed') {
+                                showNotificationBanner(
+                                    "🔔 Bagong Order Natanggap!",
+                                    `Mula sa Branch ${newOrder.branchCode || ''} (${newOrder.orderRef}) ${newOrder.isRush ? '⚡ RUSH ORDER' : ''}`,
+                                    newOrder.isRush
+                                );
+                            }
+                        } else if (change.type === "modified") {
+                            const updatedOrder = change.doc.data();
+                            if (currentUserRole !== 'branch' && updatedOrder.status === 'problem') {
+                                showNotificationBanner(
+                                    "⚠️ Delivery Issue Reported!",
+                                    `May reklamo sa Branch ${updatedOrder.branchCode || ''} para sa ${updatedOrder.orderRef}`,
+                                    true
+                                );
+                            }
+                        }
+                    });
+                }
+
+                isInitialOrdersLoad = false;
+                allOrdersList = [];
+                snapshot.forEach(doc => {
+                    allOrdersList.push({ id: doc.id, ...doc.data() });
+                });
+
+                renderAllRoleHistories();
+            });
+        }
+
+        function getGroupedOrders() {
+            const groups = {};
+            allOrdersList.forEach(item => {
+                const ref = item.orderRef || "N/A";
+                const comm = item.commissary || "unknown";
+                const key = `${ref}_${comm}`;
+
+                if (!groups[key]) {
+                    groups[key] = {
+                        orderRef: ref,
+                        commissary: comm,
+                        branchCode: item.branchCode || "N/A",
+                        orderPlacedDate: item.orderPlacedDate || (item.timestamp ? new Date(item.timestamp.toDate()).toLocaleDateString() : "-"),
+                        deliveryDate: item.deliveryDate || "-",
+                        isRush: item.isRush || false,
+                        siNumber: item.siNumber || "",
+                        status: item.status || "placed",
+                        timestamp: item.timestamp ? new Date(item.timestamp.toDate()).toLocaleString() : "Just now",
+                        billing: item.billing || null,
+                        damagedItems: item.damagedItems || null,
+                        damageRemarks: item.damageRemarks || "",
+                        damagePhotoUrls: item.damagePhotoUrls || (item.damagePhotoUrl ? [item.damagePhotoUrl] : []),
+                        docIds: [],
+                        items: []
+                    };
+                }
+                groups[key].docIds.push(item.id);
+                groups[key].items.push(item);
+
+                if (item.siNumber && !groups[key].siNumber) groups[key].siNumber = item.siNumber;
+                if (item.billing && !groups[key].billing) groups[key].billing = item.billing;
+                if (item.damagedItems) groups[key].damagedItems = item.damagedItems;
+                if (item.damageRemarks) groups[key].damageRemarks = item.damageRemarks;
+                if (item.damagePhotoUrls) groups[key].damagePhotoUrls = item.damagePhotoUrls;
+                if (item.isRush) groups[key].isRush = true;
+            });
+            return Object.values(groups);
+        }
+
+        function renderAllRoleHistories() {
+            if (currentUserRole === "admin") renderAdminHistory();
+            if (currentUserRole === "branch") renderBranchHistory();
+            if (currentUserRole === "commissaryA") renderCommAHistory();
+            if (currentUserRole === "commissaryB") renderCommBHistory();
+        }
+
+        function renderAdminHistory() {
+            const tbody = document.getElementById('adminHistoryTable');
+            if (!tbody) return;
+
+            const q = (document.getElementById('adminHistorySearch')?.value || "").toLowerCase().trim();
+            const statusFilter = document.getElementById('adminStatusFilter')?.value || "";
+            const dateFilter = document.getElementById('adminDateFilter')?.value || "";
+
+            const groups = getGroupedOrders();
+            tbody.innerHTML = "";
+
+            const filtered = groups.filter(g => {
+                const matchQuery = (g.orderRef.toLowerCase().includes(q) || 
+                                    g.siNumber.toLowerCase().includes(q) || 
+                                    g.branchCode.toLowerCase().includes(q));
+                const matchStatus = !statusFilter || g.status === statusFilter;
+                const matchDate = !dateFilter || g.deliveryDate === dateFilter;
+                return matchQuery && matchStatus && matchDate;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color: var(--text-muted);">Walang nahanap na order.</td></tr>';
+                return;
+            }
+
+            filtered.forEach(g => {
+                const total = g.billing ? g.billing.grandTotal : g.items.reduce((acc, i) => acc + (i.price * i.qty), 0);
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><b>${g.orderRef}</b></td>
+                    <td><b>${g.siNumber || '<span style="color:var(--text-muted);">-</span>'}</b></td>
+                    <td><b>${g.branchCode}</b></td>
+                    <td style="font-size:12px; color:var(--text-muted);">${g.orderPlacedDate}</td>
+                    <td>${g.deliveryDate}</td>
+                    <td>${g.isRush ? '<span class="tag-pill tag-rush">⚡ RUSH</span>' : '<span style="color:var(--text-muted); font-size:12px;">Standard</span>'}</td>
+                    <td><span class="tag-pill status-${g.status}">${g.status}</span></td>
+                    <td><b>PHP ${total.toFixed(2)}</b></td>
+                    <td>${g.items.length} item(s)</td>
+                    <td>
+                        <button class="btn-action btn-action-primary" onclick='openOrderModal(${JSON.stringify(g).replace(/'/g, "&apos;")})'>
+                            📂 Buksan
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderBranchHistory() {
+            const tbody = document.getElementById('branchHistoryTable');
+            if (!tbody) return;
+
+            const q = (document.getElementById('branchHistorySearch')?.value || "").toLowerCase().trim();
+            const statusFilter = document.getElementById('branchStatusFilter')?.value || "";
+            const dateFilter = document.getElementById('branchDateFilter')?.value || "";
+
+            const groups = getGroupedOrders().filter(g => g.branchCode === currentUserBranchCode);
+            tbody.innerHTML = "";
+
+            const filtered = groups.filter(g => {
+                const matchQuery = (g.orderRef.toLowerCase().includes(q) || g.siNumber.toLowerCase().includes(q));
+                const matchStatus = !statusFilter || g.status === statusFilter;
+                const matchDate = !dateFilter || g.deliveryDate === dateFilter;
+                return matchQuery && matchStatus && matchDate;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color: var(--text-muted);">Walang kasaysayan ng order.</td></tr>';
+                return;
+            }
+
+            filtered.forEach(g => {
+                const total = g.billing ? g.billing.grandTotal : g.items.reduce((acc, i) => acc + (i.price * i.qty), 0);
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><b>${g.orderRef}</b></td>
+                    <td><b>${g.siNumber || '<span style="color:var(--text-muted);">Pending SI</span>'}</b></td>
+                    <td>${g.commissary === 'commissaryA' ? 'Meat (SAP)' : 'Produce'}</td>
+                    <td style="font-size:12px; color:var(--text-muted);">${g.orderPlacedDate}</td>
+                    <td>${g.deliveryDate}</td>
+                    <td>${g.isRush ? '<span class="tag-pill tag-rush">⚡ RUSH</span>' : '<span style="color:var(--text-muted); font-size:12px;">Standard</span>'}</td>
+                    <td><span class="tag-pill status-${g.status}">${g.status}</span></td>
+                    <td><b>PHP ${total.toFixed(2)}</b></td>
+                    <td>${g.items.length} item(s)</td>
+                    <td>
+                        <button class="btn-action btn-action-primary" onclick='openOrderModal(${JSON.stringify(g).replace(/'/g, "&apos;")})'>
+                            📂 Tingnan
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderCommAHistory() {
+            const tbody = document.getElementById('commissaryAOrdersSummaryTable');
+            if (!tbody) return;
+
+            const q = (document.getElementById('commAHistorySearch')?.value || "").toLowerCase().trim();
+            const statusFilter = document.getElementById('commAStatusFilter')?.value || "";
+            const dateFilter = document.getElementById('commADateFilter')?.value || "";
+
+            const groups = getGroupedOrders().filter(g => g.commissary === "commissaryA");
+            tbody.innerHTML = "";
+
+            const filtered = groups.filter(g => {
+                const matchQuery = (g.orderRef.toLowerCase().includes(q) || 
+                                    g.siNumber.toLowerCase().includes(q) || 
+                                    g.branchCode.toLowerCase().includes(q));
+                const matchStatus = !statusFilter || g.status === statusFilter;
+                const matchDate = !dateFilter || g.deliveryDate === dateFilter;
+                return matchQuery && matchStatus && matchDate;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color: var(--text-muted);">Walang orders.</td></tr>';
+                return;
+            }
+
+            filtered.forEach(g => {
+                const total = g.billing ? g.billing.grandTotal : g.items.reduce((acc, i) => acc + (i.price * i.qty), 0);
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><b>${g.orderRef}</b></td>
+                    <td><b>${g.siNumber || '<span style="color:var(--text-muted);">-</span>'}</b></td>
+                    <td><b>${g.branchCode}</b></td>
+                    <td style="font-size:12px; color:var(--text-muted);">${g.orderPlacedDate}</td>
+                    <td>${g.deliveryDate}</td>
+                    <td>${g.isRush ? '<span class="tag-pill tag-rush">⚡ RUSH ORDER</span>' : '<span style="color:var(--text-muted); font-size:12px;">Standard</span>'}</td>
+                    <td><span class="tag-pill status-${g.status}">${g.status}</span></td>
+                    <td><b>PHP ${total.toFixed(2)}</b></td>
+                    <td>${g.items.length} item(s)</td>
+                    <td>
+                        <button class="btn-action btn-action-primary" onclick='openOrderModal(${JSON.stringify(g).replace(/'/g, "&apos;")})'>
+                            📂 Buksan ang Order
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderCommBHistory() {
+            const tbody = document.getElementById('commissaryBOrdersSummaryTable');
+            if (!tbody) return;
+
+            const q = (document.getElementById('commBHistorySearch')?.value || "").toLowerCase().trim();
+            const statusFilter = document.getElementById('commBStatusFilter')?.value || "";
+            const dateFilter = document.getElementById('commBDateFilter')?.value || "";
+
+            const groups = getGroupedOrders().filter(g => g.commissary === "commissaryB");
+            tbody.innerHTML = "";
+
+            const filtered = groups.filter(g => {
+                const matchQuery = (g.orderRef.toLowerCase().includes(q) || 
+                                    g.siNumber.toLowerCase().includes(q) || 
+                                    g.branchCode.toLowerCase().includes(q));
+                const matchStatus = !statusFilter || g.status === statusFilter;
+                const matchDate = !dateFilter || g.deliveryDate === dateFilter;
+                return matchQuery && matchStatus && matchDate;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color: var(--text-muted);">Walang orders.</td></tr>';
+                return;
+            }
+
+            filtered.forEach(g => {
+                const total = g.billing ? g.billing.grandTotal : g.items.reduce((acc, i) => acc + (i.price * i.qty), 0);
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><b>${g.orderRef}</b></td>
+                    <td><b>${g.siNumber || '<span style="color:var(--text-muted);">-</span>'}</b></td>
+                    <td><b>${g.branchCode}</b></td>
+                    <td style="font-size:12px; color:var(--text-muted);">${g.orderPlacedDate}</td>
+                    <td>${g.deliveryDate}</td>
+                    <td>${g.isRush ? '<span class="tag-pill tag-rush">⚡ RUSH ORDER</span>' : '<span style="color:var(--text-muted); font-size:12px;">Standard</span>'}</td>
+                    <td><span class="tag-pill status-${g.status}">${g.status}</span></td>
+                    <td><b>PHP ${total.toFixed(2)}</b></td>
+                    <td>${g.items.length} item(s)</td>
+                    <td>
+                        <button class="btn-action btn-action-primary" onclick='openOrderModal(${JSON.stringify(g).replace(/'/g, "&apos;")})'>
+                            📂 Buksan ang Order
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        ['adminHistorySearch', 'adminStatusFilter', 'adminDateFilter'].forEach(id => {
+            document.getElementById(id)?.addEventListener('input', renderAdminHistory);
+            document.getElementById(id)?.addEventListener('change', renderAdminHistory);
+        });
+        ['branchHistorySearch', 'branchStatusFilter', 'branchDateFilter'].forEach(id => {
+            document.getElementById(id)?.addEventListener('input', renderBranchHistory);
+            document.getElementById(id)?.addEventListener('change', renderBranchHistory);
+        });
+        ['commAHistorySearch', 'commAStatusFilter', 'commADateFilter'].forEach(id => {
+            document.getElementById(id)?.addEventListener('input', renderCommAHistory);
+            document.getElementById(id)?.addEventListener('change', renderCommAHistory);
+        });
+        ['commBHistorySearch', 'commBStatusFilter', 'commBDateFilter'].forEach(id => {
+            document.getElementById(id)?.addEventListener('input', renderCommBHistory);
+            document.getElementById(id)?.addEventListener('change', renderCommBHistory);
+        });
+
+        function clearAdminHistoryFilters() {
+            document.getElementById('adminHistorySearch').value = '';
+            document.getElementById('adminStatusFilter').value = '';
+            document.getElementById('adminDateFilter').value = '';
+            renderAdminHistory();
+        }
+        function clearBranchHistoryFilters() {
+            document.getElementById('branchHistorySearch').value = '';
+            document.getElementById('branchStatusFilter').value = '';
+            document.getElementById('branchDateFilter').value = '';
+            renderBranchHistory();
+        }
+        function clearCommAFilters() {
+            document.getElementById('commAHistorySearch').value = '';
+            document.getElementById('commAStatusFilter').value = '';
+            document.getElementById('commADateFilter').value = '';
+            renderCommAHistory();
+        }
+        function clearCommBFilters() {
+            document.getElementById('commBHistorySearch').value = '';
+            document.getElementById('commBStatusFilter').value = '';
+            document.getElementById('commBDateFilter').value = '';
+            renderCommBHistory();
+        }
+
+        // ==========================================
+        // EXCEL / CSV EXPORT
+        // ==========================================
+        function exportOrdersToCSV(roleFilter) {
+            let groups = getGroupedOrders();
+            if (roleFilter === 'branch') {
+                groups = groups.filter(g => g.branchCode === currentUserBranchCode);
+            } else if (roleFilter === 'commissaryA') {
+                groups = groups.filter(g => g.commissary === 'commissaryA');
+            } else if (roleFilter === 'commissaryB') {
+                groups = groups.filter(g => g.commissary === 'commissaryB');
+            }
+
+            if (!groups.length) {
+                alert("Walang data na mai-export.");
+                return;
+            }
+
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Order Ref,SI Number,Branch,Order Placed Time,Target Delivery Date,Is Rush,Commissary,Status,Gross Subtotal,Discount,VAT Amount,Grand Total,Total Items\r\n";
+
+            groups.forEach(g => {
+                const b = g.billing || {};
+                const gross = (b.grossSubtotal || 0).toFixed(2);
+                const discount = (b.discount || 0).toFixed(2);
+                const vat = (b.vatAmount || 0).toFixed(2);
+                const grand = (b.grandTotal || g.items.reduce((acc, i) => acc + (i.price * i.qty), 0)).toFixed(2);
+
+                const row = [
+                    `"${g.orderRef}"`,
+                    `"${g.siNumber || 'N/A'}"`,
+                    `"${g.branchCode}"`,
+                    `"${g.orderPlacedDate}"`,
+                    `"${g.deliveryDate}"`,
+                    `"${g.isRush ? 'YES' : 'NO'}"`,
+                    `"${g.commissary}"`,
+                    `"${g.status}"`,
+                    gross,
+                    discount,
+                    vat,
+                    grand,
+                    g.items.length
+                ];
+                csvContent += row.join(",") + "\r\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Orders_Export_${roleFilter}_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // ==========================================
+        // ORDER DETAILS MODAL
+        // ==========================================
+        function openOrderModal(groupData) {
+            currentModalOrderGroup = groupData;
+            document.getElementById('modalOrderRefTitle').innerText = `Order: ${groupData.orderRef} (${groupData.branchCode}) ${groupData.isRush ? '⚡ [RUSH ORDER]' : ''}`;
+            document.getElementById('modalOrderSubtitle').innerText = `Order Placed: ${groupData.orderPlacedDate} | Target Delivery: ${groupData.deliveryDate} | SI: ${groupData.siNumber || 'Wala pa'} | Kasalukuyang Status: ${groupData.status.toUpperCase()}`;
+
+            const billing = groupData.billing || {
+                grossSubtotal: groupData.items.reduce((sum, i) => sum + (i.price * i.qty), 0),
+                discount: 0,
+                vatOption: "none",
+                vatAmount: 0,
+                grandTotal: groupData.items.reduce((sum, i) => sum + (i.price * i.qty), 0)
+            };
+
+            document.getElementById('modalGrossSubtotal').innerText = (billing.grossSubtotal || 0).toFixed(2);
+            document.getElementById('modalDiscount').innerText = (billing.discount || 0).toFixed(2);
+            document.getElementById('modalVat').innerText = (billing.vatAmount || 0).toFixed(2);
+            document.getElementById('modalGrandTotal').innerText = (billing.grandTotal || 0).toFixed(2);
+
+            if (billing.vatOption === "exclusive") {
+                document.getElementById('modalVatLabel').innerText = "VAT Exclusive (+12%):";
+            } else if (billing.vatOption === "inclusive") {
+                document.getElementById('modalVatLabel').innerText = "VAT Inclusive (12% Component):";
+            } else {
+                document.getElementById('modalVatLabel').innerText = "VAT (0% / Exempt):";
+            }
+
+            const existingDamageBox = document.getElementById('damageReportViewBox');
+            if (existingDamageBox) existingDamageBox.remove();
+
+            if (groupData.status === 'problem' && (groupData.damagedItems || groupData.damageRemarks)) {
+                const damageDiv = document.createElement('div');
+                damageDiv.id = "damageReportViewBox";
+                damageDiv.style.cssText = "background: #fee2e2; border: 1px solid #ef4444; border-radius: 8px; padding: 12px; margin-bottom: 14px; font-size: 13px; color: #991b1b;";
+
+                let photosHtml = "";
+                if (groupData.damagePhotoUrls && groupData.damagePhotoUrls.length) {
+                    photosHtml = `<div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;">`;
+                    groupData.damagePhotoUrls.forEach(url => {
+                        photosHtml += `
+                            <a href="${url}" target="_blank">
+                                <img src="${url}" alt="Damage Proof" style="height: 100px; width: 100px; object-fit: cover; border-radius: 6px; border: 1px solid #dc2626;">
+                            </a>
+                        `;
+                    });
+                    photosHtml += `</div>`;
+                }
+
+                damageDiv.innerHTML = `
+                    <h4 style="margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                        <span>⚠️ Delivery Issue Report mula sa Branch</span>
+                    </h4>
+                    <p><b>Aytem at dami na may sira/kulang:</b> ${groupData.damagedItems ? groupData.damagedItems.join('; ') : 'Walang tinukoy'}</p>
+                    <p style="margin-top: 4px;"><b>Paliwanag / Remarks:</b> ${groupData.damageRemarks || 'Walang remarks'}</p>
+                    ${photosHtml}
+                `;
+                document.getElementById('modalOrderItemsTable').parentElement.before(damageDiv);
+            }
+
+            const commControls = document.getElementById('commissaryControls');
+            const branchControls = document.getElementById('branchReceivingControls');
+            const copyBtn = document.getElementById('modalCopyBtnContainer');
+
+            if (currentUserRole === 'branch') {
+                commControls.style.display = 'none';
+                copyBtn.style.display = 'none';
+                branchControls.style.display = 'flex';
+            } else {
+                commControls.style.display = 'flex';
+                copyBtn.style.display = 'block';
+                branchControls.style.display = 'none';
+
+                document.getElementById('modalStatusSelect').value = groupData.status || 'placed';
+                document.getElementById('modalSiInput').value = groupData.siNumber || '';
+            }
+
+            const tbody = document.getElementById('modalOrderItemsTable');
+            tbody.innerHTML = "";
+
+            groupData.items.forEach((item) => {
+                const priceFormatted = (item.price || 0).toFixed(2);
+                const subFormatted = ((item.price || 0) * (item.qty || 0)).toFixed(2);
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight:700; color:#0284c7;">${item.sapItemCode}</td>
+                    <td style="color: var(--text-muted);">${item.branchItemCode}</td>
+                    <td>${item.itemName}</td>
+                    <td>PHP ${priceFormatted}</td>
+                    <td><b>${item.qty}</b> ${item.measurement}</td>
+                    <td>PHP ${subFormatted}</td>
+                    <td>
+                        ${currentUserRole !== 'branch' ? `
+                            <button class="btn-action btn-action-primary" onclick="copySingleItemModal('${item.sapItemCode}', '${item.itemName}', '${priceFormatted}', '${item.qty} ${item.measurement}')">
+                                📋 Kopyahin
+                            </button>
+                        ` : '<span style="color:var(--text-muted); font-size:12px;">Branch Item</span>'}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('orderDetailsModal').style.display = 'flex';
+        }
+
+        function closeOrderModal() {
+            document.getElementById('orderDetailsModal').style.display = 'none';
+        }
+
+        function updateCommissaryStatus() {
+            if (!currentModalOrderGroup || !currentModalOrderGroup.docIds) return;
+
+            const newStatus = document.getElementById('modalStatusSelect').value;
+            const newSi = document.getElementById('modalSiInput').value.trim().toUpperCase();
+
+            const batch = db.batch();
+            currentModalOrderGroup.docIds.forEach(id => {
+                const ref = db.collection("orders").doc(id);
+                batch.update(ref, {
+                    status: newStatus,
+                    siNumber: newSi,
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
+                    updatedBy: currentActiveUser.email
+                });
+            });
+
+            batch.commit().then(() => {
+                alert(`Nai-update ang status sa: ${newStatus.toUpperCase()}`);
+                closeOrderModal();
+            }).catch(err => alert("Error: " + err.message));
+        }
+
+        function confirmBranchDelivery(receivingStatus) {
+            if (!currentModalOrderGroup || !currentModalOrderGroup.docIds) return;
+
+            let remarks = "";
+            if (receivingStatus === 'rejected') {
+                remarks = prompt("Bakit hindi tinanggap ang delivery?");
+                if (remarks === null) return;
+            }
+
+            const batch = db.batch();
+            currentModalOrderGroup.docIds.forEach(id => {
+                const ref = db.collection("orders").doc(id);
+                batch.update(ref, {
+                    status: receivingStatus,
+                    branchRemarks: remarks || "",
+                    receivedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    receivedBy: currentActiveUser.email
+                });
+            });
+
+            batch.commit().then(() => {
+                alert("Nai-tag ang delivery bilang: " + receivingStatus.toUpperCase());
+                closeOrderModal();
+            }).catch(err => alert("Error: " + err.message));
+        }
+
+        // ==========================================
+        // REPORT PROBLEM MODAL
+        // ==========================================
+        function openReportProblemModal() {
+            if (!currentModalOrderGroup || !currentModalOrderGroup.items) return;
+
+            document.getElementById('reportModalSubtitle').innerText = `Order: ${currentModalOrderGroup.orderRef} (${currentModalOrderGroup.branchCode})`;
+            const listContainer = document.getElementById('damageItemsSelectionList');
+            listContainer.innerHTML = "";
+
+            currentModalOrderGroup.items.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.style.cssText = "display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--table-border); font-size: 13px; flex-wrap: wrap; gap: 8px;";
+                div.innerHTML = `
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" class="damage-item-checkbox" id="dmg-check-${index}" value="${item.itemName} (${item.sapItemCode})" data-index="${index}" onchange="toggleDamageQtyInput(${index})">
+                        <span><b>${item.itemName}</b> <small style="color:var(--text-muted);">(${item.sapItemCode})</small></span>
+                    </label>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span style="font-size: 12px; color: var(--text-muted);">Total: ${item.qty} ${item.measurement} | Sira:</span>
+                        <input type="number" step="any" min="0.01" max="${item.qty}" value="${item.qty}" id="dmg-qty-${index}" style="width: 70px; padding: 4px 6px; font-size: 12px;" disabled>
+                        <span style="font-size: 12px;">${item.measurement}</span>
+                    </div>
+                `;
+                listContainer.appendChild(div);
+            });
+
+            document.getElementById('reportRemarksInput').value = "";
+            document.getElementById('reportMultiPhotoInput').value = "";
+            document.getElementById('multiPhotoPreviewContainer').innerHTML = "";
+            uploadedDamagePhotosBase64 = [];
+
+            document.getElementById('reportProblemModal').style.display = "flex";
+        }
+
+        function toggleDamageQtyInput(index) {
+            const isChecked = document.getElementById(`dmg-check-${index}`).checked;
+            document.getElementById(`dmg-qty-${index}`).disabled = !isChecked;
+        }
+
+        function closeReportProblemModal() {
+            document.getElementById('reportProblemModal').style.display = "none";
+        }
+
+        async function compressImageUnder500KB(file) {
+            const maxSizeBytes = 500 * 1024;
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+
+                        const maxDimension = 1280;
+                        if (width > maxDimension || height > maxDimension) {
+                            if (width > height) {
+                                height = Math.round((height * maxDimension) / width);
+                                width = maxDimension;
+                            } else {
+                                width = Math.round((width * maxDimension) / height);
+                                height = maxDimension;
+                            }
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        let quality = 0.85;
+                        let dataUrl = canvas.toDataURL('image/jpeg', quality);
+
+                        while (Math.round((dataUrl.length * 3) / 4) > maxSizeBytes && quality > 0.15) {
+                            quality -= 0.1;
+                            dataUrl = canvas.toDataURL('image/jpeg', quality);
+                        }
+
+                        resolve(dataUrl);
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        document.getElementById('reportMultiPhotoInput')?.addEventListener('change', async function(e) {
+            const files = Array.from(e.target.files);
+            if (!files.length) return;
+
+            const previewContainer = document.getElementById('multiPhotoPreviewContainer');
+            previewContainer.innerHTML = '<span style="font-size:12px; color:var(--text-muted); width:100%;">Ina-adjust at kinukompress sa ilalim ng 500 KB...</span>';
+            uploadedDamagePhotosBase64 = [];
+
+            for (const file of files) {
+                const compressedBase64 = await compressImageUnder500KB(file);
+                uploadedDamagePhotosBase64.push(compressedBase64);
+
+                const approxKb = Math.round((compressedBase64.length * 3) / 4 / 1024);
+
+                if (uploadedDamagePhotosBase64.length === 1) {
+                    previewContainer.innerHTML = '';
+                }
+
+                const thumbWrapper = document.createElement('div');
+                thumbWrapper.style.cssText = "display: flex; flex-direction: column; align-items: center; gap: 4px;";
+                thumbWrapper.innerHTML = `
+                    <img src="${compressedBase64}" alt="Damage Proof" style="height: 80px; width: 80px; object-fit: cover; border-radius: 6px; border: 1px solid var(--card-border);">
+                    <small style="font-size: 10px; color: #166534; font-weight: 600;">${approxKb} KB</small>
+                `;
+                previewContainer.appendChild(thumbWrapper);
+            }
+        });
+
+        document.getElementById('reportProblemForm')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (!currentModalOrderGroup || !currentModalOrderGroup.docIds) return;
+
+            const selectedCheckboxes = document.querySelectorAll('.damage-item-checkbox:checked');
+            if (selectedCheckboxes.length === 0) {
+                alert("Pumili ng kahit isang aytem na may damage o kulang.");
+                return;
+            }
+
+            const damagedSummaryList = [];
+            selectedCheckboxes.forEach(cb => {
+                const idx = cb.getAttribute('data-index');
+                const qtyVal = document.getElementById(`dmg-qty-${idx}`).value;
+                const origItem = currentModalOrderGroup.items[idx];
+                damagedSummaryList.push(`${cb.value} [Sira/Kulang: ${qtyVal} ${origItem.measurement}]`);
+            });
+
+            const remarks = document.getElementById('reportRemarksInput').value.trim();
+
+            const batch = db.batch();
+            currentModalOrderGroup.docIds.forEach(id => {
+                const ref = db.collection("orders").doc(id);
+                batch.update(ref, {
+                    status: "problem",
+                    damagedItems: damagedSummaryList,
+                    damageRemarks: remarks,
+                    damagePhotoUrls: uploadedDamagePhotosBase64,
+                    reportedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    reportedBy: currentActiveUser.email
+                });
+            });
+
+            batch.commit().then(() => {
+                alert("Naitala na ang delivery issue! Makikita ito agad ni Commissary at Head Office kasama ang mga litrato at partikular na dami.");
+                closeReportProblemModal();
+                closeOrderModal();
+            }).catch(err => alert("Error sa pag-report: " + err.message));
+        });
+
+        // ==========================================
+        // COPY HANDLERS
+        // ==========================================
+        function copySingleItemModal(sapCode, name, price, qtyUom) {
+            const textToCopy = `${sapCode}\t${name}\t${price}\t${qtyUom}`;
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                alert(`Nakopya sa clipboard:\n\nCode: ${sapCode}\nDesc: ${name}\nPrice: PHP ${price}\nQty: ${qtyUom}`);
+            }).catch(err => alert("Error sa pagkopya: " + err.message));
+        }
+
+        function copyModalOrderForSAP() {
+            if (!currentModalOrderGroup || !currentModalOrderGroup.items.length) {
+                alert("Walang items na makokopya.");
+                return;
+            }
+
+            let tsvRows = [];
+            currentModalOrderGroup.items.forEach(item => {
+                const sapCode = item.sapItemCode || '';
+                const name = item.itemName || '';
+                const price = (item.price || 0).toFixed(2);
+                const qtyUom = `${item.qty} ${item.measurement}`;
+
+                if (sapCode && name) {
+                    tsvRows.push(`${sapCode}\t${name}\t${price}\t${qtyUom}`);
+                }
+            });
+
+            const clipboardText = tsvRows.join('\n');
+            navigator.clipboard.writeText(clipboardText).then(() => {
+                alert(`Matagumpay na nakopya ang ${tsvRows.length} item(s) para sa SAP/resibo!`);
+            }).catch(err => alert("Error sa pagkopya: " + err.message));
+        }
+
+        // Search Filter (Branch)
+        const searchInput = document.getElementById('itemSearchInput');
+        const clearBtn = document.getElementById('clearSearchBtn');
+        const noResults = document.getElementById('noResultsMsg');
+
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                const query = this.value.toLowerCase().trim();
+                const rows = document.querySelectorAll('#branchOrderItemsTable .product-row');
+                let visibleCount = 0;
+
+                rows.forEach(row => {
+                    const code = row.querySelector('.item-branch-code').innerText.toLowerCase();
+                    const name = row.querySelector('.item-name').innerText.toLowerCase();
+
+                    if (code.includes(query) || name.includes(query)) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+
+                noResults.style.display = (visibleCount === 0 && rows.length > 0) ? 'block' : 'none';
+            });
+
+            clearBtn.addEventListener('click', () => {
+                searchInput.value = '';
+                searchInput.dispatchEvent(new Event('input'));
+            });
+        }
+    </script>
+</body>
+</html>
