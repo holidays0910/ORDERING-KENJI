@@ -171,6 +171,39 @@
             background-color: #e2e8f0;
         }
 
+        .btn-copy-sap {
+            background-color: #0284c7;
+            color: #ffffff;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-copy-sap:hover {
+            background-color: #0369a1;
+        }
+
+        .btn-setup {
+            background-color: #8b5cf6;
+            color: #ffffff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-setup:hover {
+            background-color: #7c3aed;
+        }
+
         .btn-add-cart {
             background-color: #2563eb;
             color: #ffffff;
@@ -188,10 +221,11 @@
 
         .cart-summary {
             display: flex;
-            justify-content: flex-end;
+            justify-content: space-between;
             align-items: center;
-            gap: 16px;
             margin-top: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
         }
 
         .btn-order {
@@ -207,12 +241,6 @@
 
         .btn-order:hover {
             background-color: #059669;
-        }
-
-        .loading-screen {
-            text-align: center;
-            padding: 50px 0;
-            color: #64748b;
         }
 
         .search-box {
@@ -237,19 +265,18 @@
             border-radius: 4px;
         }
 
-        /* Commissary Add Product Form */
-        .product-form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 12px;
-            margin-bottom: 16px;
+        .loading-screen {
+            text-align: center;
+            padding: 50px 0;
+            color: #64748b;
         }
 
-        .product-form-grid input, .product-form-grid select {
-            padding: 8px 12px;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            font-size: 14px;
+        .cart-box {
+            background: #f8fafc;
+            border: 1px dashed #cbd5e1;
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 20px;
         }
     </style>
 </head>
@@ -271,11 +298,12 @@
             <h3>Ikinakarga ang iyong dashboard...</h3>
         </div>
 
-        <!-- Admin View -->
+        <!-- ADMIN VIEW -->
         <div id="adminSection" class="role-section">
             <div class="card">
                 <div class="card-header">
-                    <h3>Account Management</h3>
+                    <h3>Account Management & System Setup</h3>
+                    <button class="btn-setup" id="autoSetupBtn">⚡ Auto-Create Firebase Tables & Products</button>
                 </div>
                 <div class="table-responsive">
                     <table>
@@ -296,12 +324,15 @@
             </div>
         </div>
 
-        <!-- Branch View -->
+        <!-- BRANCH VIEW -->
         <div id="branchSection" class="role-section">
             <div class="card">
                 <div class="card-header">
                     <h3>Branch Order Center (<span id="branchCodeDisplay">-</span>)</h3>
-                    <input type="date" id="orderDatePicker" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                    <div>
+                        <label style="font-size: 13px; font-weight: 600; margin-right: 8px;">Target Delivery Date:</label>
+                        <input type="date" id="orderDatePicker" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                    </div>
                 </div>
 
                 <div class="search-box">
@@ -329,47 +360,96 @@
                         Walang nahanap na produkto.
                     </div>
                 </div>
-                <div class="cart-summary">
-                    <button class="btn-order" id="placeOrderBtn">Place Order</button>
+
+                <!-- Shopping Cart Container -->
+                <div class="cart-box" id="cartContainer" style="display: none;">
+                    <h4 style="margin-bottom: 12px;">Cart Items (<span id="cartCount">0</span>)</h4>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Item Code</th>
+                                    <th>Deskripsyon</th>
+                                    <th>Commissary</th>
+                                    <th>Qty</th>
+                                    <th>Subtotal</th>
+                                    <th>Aksyon</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cartTableBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="cart-summary">
+                        <span style="font-weight: 700; font-size: 16px;">Kabuuan: PHP <span id="cartTotal">0.00</span></span>
+                        <button class="btn-order" id="placeOrderBtn">Confirm & Place Order</button>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Commissary A View -->
+        <!-- COMMISSARY A VIEW (Meat / SAP B1) -->
         <div id="commissaryASection" class="role-section">
             <div class="card">
                 <div class="card-header">
-                    <h3>Commissary A - Meat & SAP B1 Processing</h3>
-                </div>
-                <h4 style="margin-bottom: 12px;">Magdagdag ng Bagong Produkto (Karne)</h4>
-                <form id="addMeatProductForm">
-                    <div class="product-form-grid">
-                        <input type="text" id="meatCode" placeholder="SAP B1 / Item Code" required>
-                        <input type="text" id="meatName" placeholder="Pangalan ng Karne" required>
-                        <input type="number" id="meatPrice" placeholder="Price (PHP)" step="0.01" required>
-                        <input type="text" id="meatUnit" placeholder="Unit (hal. kg, pack)" required>
+                    <div>
+                        <h3>Commissary A - Meat Orders (SAP B1)</h3>
+                        <p style="font-size: 13px; color: #64748b;">I-click ang copy button para mai-paste sa Google Sheets bago ilipat sa SAP B1.</p>
                     </div>
-                    <button type="submit" class="btn-order" style="padding: 8px 16px; font-size: 13px;">Save Meat Item</button>
-                </form>
+                    <button class="btn-copy-sap" onclick="copyTableForSAP('commissaryAOrdersTable')">
+                        📋 Kopyahin Lahat para sa SAP (Sheets)
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Order Ref</th>
+                                <th>Branch</th>
+                                <th>Item Code</th>
+                                <th>Item Description</th>
+                                <th>Quantity</th>
+                                <th>Delivery Date</th>
+                                <th>Aksyon</th>
+                            </tr>
+                        </thead>
+                        <tbody id="commissaryAOrdersTable">
+                            <tr><td colspan="7" style="text-align:center; color:#64748b;">Naglo-load ng mga order...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
-        <!-- Commissary B View -->
+        <!-- COMMISSARY B VIEW (Fresh Produce) -->
         <div id="commissaryBSection" class="role-section">
             <div class="card">
                 <div class="card-header">
-                    <h3>Commissary B - Fresh Produce & Inventory</h3>
-                </div>
-                <h4 style="margin-bottom: 12px;">Magdagdag ng Bagong Produkto (Gulay)</h4>
-                <form id="addVegProductForm">
-                    <div class="product-form-grid">
-                        <input type="text" id="vegCode" placeholder="Item Code" required>
-                        <input type="text" id="vegName" placeholder="Pangalan ng Gulay" required>
-                        <input type="number" id="vegPrice" placeholder="Price (PHP)" step="0.01" required>
-                        <input type="text" id="vegUnit" placeholder="Unit (hal. bundle, crate)" required>
+                    <div>
+                        <h3>Commissary B - Fresh Produce Orders</h3>
+                        <p style="font-size: 13px; color: #64748b;">Kopyahin ang code, description, at quantity para sa monitoring sheets.</p>
                     </div>
-                    <button type="submit" class="btn-order" style="padding: 8px 16px; font-size: 13px;">Save Produce Item</button>
-                </form>
+                    <button class="btn-copy-sap" onclick="copyTableForSAP('commissaryBOrdersTable')">
+                        📋 Kopyahin Lahat para sa Google Sheets
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Order Ref</th>
+                                <th>Branch</th>
+                                <th>Item Code</th>
+                                <th>Item Description</th>
+                                <th>Quantity</th>
+                                <th>Delivery Date</th>
+                                <th>Aksyon</th>
+                            </tr>
+                        </thead>
+                        <tbody id="commissaryBOrdersTable">
+                            <tr><td colspan="7" style="text-align:center; color:#64748b;">Naglo-load ng mga order...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -390,6 +470,8 @@
         const db = firebase.firestore();
 
         let currentActiveUser = null;
+        let currentUserBranchCode = "";
+        let cart = [];
 
         // 5-Minute Inactivity Auto-Logout
         (function() {
@@ -397,7 +479,7 @@
             function resetTimer() {
                 clearTimeout(timeout);
                 timeout = setTimeout(() => {
-                    alert("5 minuto kang walang activity. Awtomatikong nag-logout.");
+                    alert("5 minuto kang walang activity. Awtomatikong nag-logout para sa security.");
                     auth.signOut();
                 }, 300000);
             }
@@ -431,12 +513,15 @@
                             loadAdminUserTable();
                         } else if (data.role === "branch") {
                             document.getElementById('branchSection').style.display = 'block';
-                            document.getElementById('branchCodeDisplay').innerText = data.branchCode || "N/A";
+                            currentUserBranchCode = data.branchCode || "BRANCH";
+                            document.getElementById('branchCodeDisplay').innerText = currentUserBranchCode;
                             listenToProducts();
                         } else if (data.role === "commissaryA") {
                             document.getElementById('commissaryASection').style.display = 'block';
+                            listenToCommissaryOrders("commissaryA", "commissaryAOrdersTable");
                         } else if (data.role === "commissaryB") {
                             document.getElementById('commissaryBSection').style.display = 'block';
+                            listenToCommissaryOrders("commissaryB", "commissaryBOrdersTable");
                         }
                     } else {
                         const branchCode = prompt("Unang login! Ilagay ang Branch Code (hal. SO3, GB5, ATC):");
@@ -457,14 +542,40 @@
             }
         });
 
-        // Load Products galing sa Firestore
+        // Setup Initial Products & Tables Button (Para sa Admin)
+        document.getElementById('autoSetupBtn').addEventListener('click', function() {
+            if (!confirm("Gusto mo bang awtomatikong gumawa ng initial products sa Firestore?")) return;
+
+            const initialProducts = [
+                { itemCode: "BEEF-TAPA-01", name: "Marinated Beef Tapa (1kg)", unitPrice: 380, unit: "kg", commissary: "commissaryA", status: "active" },
+                { itemCode: "PORK-TOC-01", name: "Sweet Pork Tocino (1kg)", unitPrice: 320, unit: "kg", commissary: "commissaryA", status: "active" },
+                { itemCode: "CHK-PATTY-02", name: "Chicken Burger Patty (10s)", unitPrice: 260, unit: "pack", commissary: "commissaryA", status: "active" },
+                { itemCode: "VEG-LETTUCE", name: "Fresh Romaine Lettuce (500g)", unitPrice: 120, unit: "pack", commissary: "commissaryB", status: "active" },
+                { itemCode: "VEG-ONION-R", name: "Red Onion (1kg)", unitPrice: 150, unit: "kg", commissary: "commissaryB", status: "active" },
+                { itemCode: "VEG-TOMATO", name: "Native Tomato (1kg)", unitPrice: 90, unit: "kg", commissary: "commissaryB", status: "active" }
+            ];
+
+            const batch = db.batch();
+            initialProducts.forEach((item) => {
+                const docRef = db.collection("products").doc(item.itemCode);
+                batch.set(docRef, item);
+            });
+
+            batch.commit().then(() => {
+                alert("Tagumpay! Awtomatikong nagawa ang 'products' table sa Firebase na may default items!");
+            }).catch((err) => {
+                alert("Error sa pag-setup: " + err.message);
+            });
+        });
+
+        // Listen to Products (Branch View)
         function listenToProducts() {
             db.collection("products").where("status", "==", "active").onSnapshot((snapshot) => {
                 const tbody = document.getElementById('orderItemsTableBody');
                 tbody.innerHTML = "";
 
                 if (snapshot.empty) {
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#64748b;">Wala pang naka-register na produkto sa Firestore.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#64748b;">Wala pang produkto. Pindutin ang Setup sa Admin.</td></tr>';
                     return;
                 }
 
@@ -478,16 +589,195 @@
                         <td class="item-code">${item.itemCode || '-'}</td>
                         <td class="item-name">${item.name || '-'}</td>
                         <td>${commissaryLabel}</td>
-                        <td>${parseFloat(item.unitPrice || 0).toFixed(2)} / ${item.unit || 'unit'}</td>
+                        <td>PHP ${parseFloat(item.unitPrice || 0).toFixed(2)}</td>
                         <td><input type="number" min="1" value="1" class="qty-input" id="qty-${doc.id}"></td>
-                        <td><button class="btn-add-cart" onclick="addToCart('${doc.id}', '${item.itemCode}', '${item.name}', '${item.commissary}', ${item.unitPrice})">Add to Cart</button></td>
+                        <td><button class="btn-add-cart" onclick="addToCart('${item.itemCode}', '${item.name}', '${item.commissary}', ${item.unitPrice}, 'qty-${doc.id}')">Add to Cart</button></td>
                     `;
                     tbody.appendChild(tr);
                 });
             });
         }
 
-        // Live Search Filter
+        // Add Item to Cart
+        function addToCart(itemCode, name, commissary, unitPrice, qtyInputId) {
+            const qty = parseInt(document.getElementById(qtyInputId).value) || 1;
+            const existingIndex = cart.findIndex(i => i.itemCode === itemCode);
+
+            if (existingIndex > -1) {
+                cart[existingIndex].qty += qty;
+            } else {
+                cart.push({ itemCode, name, commissary, unitPrice, qty });
+            }
+
+            renderCart();
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cartContainer');
+            const tbody = document.getElementById('cartTableBody');
+            tbody.innerHTML = '';
+
+            if (cart.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+
+            container.style.display = 'block';
+            let total = 0;
+
+            cart.forEach((item, index) => {
+                const subtotal = item.qty * item.unitPrice;
+                total += subtotal;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${item.itemCode}</td>
+                    <td>${item.name}</td>
+                    <td>${item.commissary === 'commissaryA' ? 'Meat' : 'Produce'}</td>
+                    <td>${item.qty}</td>
+                    <td>PHP ${subtotal.toFixed(2)}</td>
+                    <td><button class="btn-action" style="background:#fee2e2; color:#991b1b;" onclick="removeFromCart(${index})">Alisin</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('cartCount').innerText = cart.length;
+            document.getElementById('cartTotal').innerText = total.toFixed(2);
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            renderCart();
+        }
+
+        // Confirm & Place Order (Awtomatikong nagsasala kada commissary)
+        document.getElementById('placeOrderBtn').addEventListener('click', function() {
+            const deliveryDate = document.getElementById('orderDatePicker').value;
+            if (!deliveryDate) {
+                alert("Mangyaring pumili muna ng Delivery Date.");
+                return;
+            }
+            if (cart.length === 0) {
+                alert("Walang laman ang iyong cart.");
+                return;
+            }
+
+            const orderRef = "ORD-" + Date.now().toString().slice(-6);
+            const batch = db.batch();
+
+            cart.forEach((item) => {
+                const docRef = db.collection("orders").doc();
+                batch.set(docRef, {
+                    orderRef: orderRef,
+                    branchCode: currentUserBranchCode,
+                    userEmail: currentActiveUser.email,
+                    itemCode: item.itemCode,
+                    itemName: item.name,
+                    qty: item.qty,
+                    commissary: item.commissary,
+                    deliveryDate: deliveryDate,
+                    status: "placed",
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            });
+
+            batch.commit().then(() => {
+                alert(`Order Success! Reference ID: ${orderRef}\nAwtomatiko itong naipadala sa kani-kanilang commissary.`);
+                cart = [];
+                renderCart();
+            }).catch(err => {
+                alert("Error sa pag-place ng order: " + err.message);
+            });
+        });
+
+        // Real-time listener para sa Commissary Orders
+        function listenToCommissaryOrders(commissaryKey, tableBodyId) {
+            db.collection("orders")
+              .where("commissary", "==", commissaryKey)
+              .onSnapshot((snapshot) => {
+                const tbody = document.getElementById(tableBodyId);
+                tbody.innerHTML = "";
+
+                if (snapshot.empty) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#64748b;">Wala pang nakatalagang order.</td></tr>';
+                    return;
+                }
+
+                snapshot.forEach((doc) => {
+                    const o = doc.data();
+                    const tr = document.createElement('tr');
+                    tr.className = "order-row";
+                    tr.innerHTML = `
+                        <td>${o.orderRef || '-'}</td>
+                        <td>${o.branchCode || '-'}</td>
+                        <td class="item-code" style="font-weight:600;">${o.itemCode}</td>
+                        <td class="item-name">${o.itemName}</td>
+                        <td class="item-qty" style="font-weight:600;">${o.qty}</td>
+                        <td>${o.deliveryDate || '-'}</td>
+                        <td>
+                            <button class="btn-action btn-action-primary" onclick="copySingleItemForSAP('${o.itemCode}', '${o.itemName}', '${o.qty}')">
+                                📋 Copy para sa SAP
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
+        }
+
+        // ==========================================
+        // GOOGLE SHEETS & SAP B1 CLIPBOARD EXPORTERS
+        // ==========================================
+
+        // 1. Pang-kopya ng ISANG row (Item Code, Description, Quantity)
+        function copySingleItemForSAP(itemCode, itemName, itemQty) {
+            // Gumagamit ng TAB (\t) para maging Columns A, B, at C sa Google Sheets
+            const textToCopy = `${itemCode}\t${itemName}\t${itemQty}`;
+
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                alert(`Nakopya sa clipboard:\n\nCode: ${itemCode}\nDesc: ${itemName}\nQty: ${itemQty}\n\nI-paste na ito sa iyong Google Sheets!`);
+            }).catch(err => {
+                alert("Error: " + err.message);
+            });
+        }
+
+        // 2. Pang-kopya ng LAHAT ng items sa buong talahanayan
+        function copyTableForSAP(tableBodyId) {
+            const tbody = document.getElementById(tableBodyId);
+            const rows = tbody.querySelectorAll('.order-row');
+
+            if (!rows.length) {
+                alert("Walang orders na makokopya sa talahanayan.");
+                return;
+            }
+
+            let tsvRows = [];
+
+            rows.forEach(row => {
+                const code = row.querySelector('.item-code')?.innerText.trim() || '';
+                const name = row.querySelector('.item-name')?.innerText.trim() || '';
+                const qty = row.querySelector('.item-qty')?.innerText.trim() || '';
+
+                if (code && name && qty) {
+                    tsvRows.push(`${code}\t${name}\t${qty}`);
+                }
+            });
+
+            if (tsvRows.length === 0) {
+                alert("Walang nakitang valid data na may Code, Description, at Qty.");
+                return;
+            }
+
+            const clipboardText = tsvRows.join('\n');
+
+            navigator.clipboard.writeText(clipboardText).then(() => {
+                alert(`Matagumpay na nakopya ang ${tsvRows.length} item(s)!\n\nFormat: [Item Code] [Description] [Quantity]\n\nPumunta sa Google Sheet, i-click ang unang cell (Column A), at pindutin ang Ctrl + V.`);
+            }).catch(err => {
+                alert("Error sa pagkopya: " + err.message);
+            });
+        }
+
+        // Live Search Filter (Branch)
         const searchInput = document.getElementById('itemSearchInput');
         const clearBtn = document.getElementById('clearSearchBtn');
         const noResults = document.getElementById('noResultsMsg');
@@ -517,45 +807,7 @@
             searchInput.dispatchEvent(new Event('input'));
         });
 
-        // Add Product: Commissary A (Meat)
-        document.getElementById('addMeatProductForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            db.collection("products").add({
-                itemCode: document.getElementById('meatCode').value.trim().toUpperCase(),
-                name: document.getElementById('meatName').value.trim(),
-                unitPrice: parseFloat(document.getElementById('meatPrice').value),
-                unit: document.getElementById('meatUnit').value.trim(),
-                commissary: "commissaryA",
-                status: "active"
-            }).then(() => {
-                alert("Meat item added successfully!");
-                this.reset();
-            });
-        });
-
-        // Add Product: Commissary B (Produce)
-        document.getElementById('addVegProductForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            db.collection("products").add({
-                itemCode: document.getElementById('vegCode').value.trim().toUpperCase(),
-                name: document.getElementById('vegName').value.trim(),
-                unitPrice: parseFloat(document.getElementById('vegPrice').value),
-                unit: document.getElementById('vegUnit').value.trim(),
-                commissary: "commissaryB",
-                status: "active"
-            }).then(() => {
-                alert("Produce item added successfully!");
-                this.reset();
-            });
-        });
-
-        // Cart & Order Placeholders
-        function addToCart(docId, code, name, comm, price) {
-            const qty = document.getElementById(`qty-${docId}`).value;
-            alert(`Nai-add sa cart: ${qty} x ${name} (${code})`);
-        }
-
-        // Admin Table Loading
+        // Admin Accounts Table
         function loadAdminUserTable() {
             db.collection("accounts").onSnapshot((snapshot) => {
                 const tbody = document.getElementById('adminUserTable');
