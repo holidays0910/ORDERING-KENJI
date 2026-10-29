@@ -297,7 +297,7 @@
 
         .product-form-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 12px;
             margin-bottom: 16px;
         }
@@ -336,6 +336,51 @@
         .tag-active { background-color: #dcfce7; color: #15803d; }
         .tag-inactive { background-color: #fee2e2; color: #991b1b; }
 
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 16px;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 24px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .modal-close-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px 8px;
+        }
+
         .collapsible-trigger {
             cursor: pointer;
             user-select: none;
@@ -371,42 +416,56 @@
                 <div class="card-header">
                     <div>
                         <h3>Head Office - Product Master & Code Mapping</h3>
-                        <p style="font-size: 13px; color: var(--text-muted);">I-map ang Branch Code (Code A) sa SAP B1 Code (Code B) at magtakda ng Whole / Loose measurement.</p>
+                        <p style="font-size: 13px; color: var(--text-muted);">Magdagdag ng produkto at itakda ang presyo, Branch Code (A), SAP B1 Code (B), at Whole / Loose units.</p>
                     </div>
+                    <button class="btn-order" onclick="toggleAddProductForm()" style="padding: 8px 14px; font-size: 13px;">
+                        ➕ Magdagdag ng Bagong Produkto
+                    </button>
                 </div>
 
-                <form id="productMasterForm">
-                    <div class="product-form-grid">
-                        <div>
-                            <label class="form-label">Branch Code (Code A)</label>
-                            <input type="text" id="prodBranchCode" placeholder="hal. BR-TAPA01" required style="width: 100%;">
+                <!-- Collapsible Add Form -->
+                <div id="addProductContainer" style="display: none; margin-top: 14px; padding: 16px; background: var(--cart-bg); border-radius: 8px; border: 1px dashed var(--card-border);">
+                    <h4 style="margin-bottom: 12px;">Form: Bagong Produkto</h4>
+                    <form id="productMasterForm">
+                        <div class="product-form-grid">
+                            <div>
+                                <label class="form-label">Branch Code (Code A)</label>
+                                <input type="text" id="prodBranchCode" placeholder="hal. BR-TAPA01" required style="width: 100%;">
+                            </div>
+                            <div>
+                                <label class="form-label">SAP B1 Code (Code B)</label>
+                                <input type="text" id="prodSapCode" placeholder="hal. SAP-MEAT-1004" required style="width: 100%;">
+                            </div>
+                            <div>
+                                <label class="form-label">Item Description</label>
+                                <input type="text" id="prodName" placeholder="hal. Marinated Beef Tapa" required style="width: 100%;">
+                            </div>
+                            <div>
+                                <label class="form-label">Price (PHP)</label>
+                                <input type="number" step="0.01" min="0" id="prodPrice" placeholder="hal. 350.00" required style="width: 100%;">
+                            </div>
+                            <div>
+                                <label class="form-label">Commissary Route</label>
+                                <select id="prodCommissary" style="width: 100%;" required>
+                                    <option value="commissaryA">Commissary A (Meat / SAP B1)</option>
+                                    <option value="commissaryB">Commissary B (Produce)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="form-label">Whole Unit</label>
+                                <input type="text" id="prodWholeUnit" placeholder="hal. kg, box, pack" required style="width: 100%;">
+                            </div>
+                            <div>
+                                <label class="form-label">Loose Unit</label>
+                                <input type="text" id="prodLooseUnit" placeholder="hal. g, ml, pc" required style="width: 100%;">
+                            </div>
                         </div>
-                        <div>
-                            <label class="form-label">SAP B1 Code (Code B)</label>
-                            <input type="text" id="prodSapCode" placeholder="hal. SAP-MEAT-1004" required style="width: 100%;">
+                        <div style="display: flex; gap: 8px;">
+                            <button type="submit" class="btn-order" style="padding: 8px 16px;">💾 I-save sa Firebase</button>
+                            <button type="button" class="btn-action btn-action-primary" onclick="toggleAddProductForm()">Kanselahin</button>
                         </div>
-                        <div>
-                            <label class="form-label">Item Description</label>
-                            <input type="text" id="prodName" placeholder="hal. Marinated Beef Tapa" required style="width: 100%;">
-                        </div>
-                        <div>
-                            <label class="form-label">Commissary Route</label>
-                            <select id="prodCommissary" style="width: 100%;" required>
-                                <option value="commissaryA">Commissary A (Meat / SAP B1)</option>
-                                <option value="commissaryB">Commissary B (Produce)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="form-label">Whole Unit (Malakihan)</label>
-                            <input type="text" id="prodWholeUnit" placeholder="hal. kg, box, bottle, pack" required style="width: 100%;">
-                        </div>
-                        <div>
-                            <label class="form-label">Loose Unit (Tingi / Maliit)</label>
-                            <input type="text" id="prodLooseUnit" placeholder="hal. g, ml, pc, slice" required style="width: 100%;">
-                        </div>
-                    </div>
-                    <button type="submit" class="btn-order" style="padding: 9px 18px;">💾 I-save ang Produkto sa Firestore</button>
-                </form>
+                    </form>
+                </div>
             </div>
 
             <!-- Master List Table -->
@@ -421,9 +480,9 @@
                                 <th>Branch Code (A)</th>
                                 <th>SAP B1 Code (B)</th>
                                 <th>Description</th>
+                                <th>Presyo (PHP)</th>
                                 <th>Commissary</th>
-                                <th>Whole Unit</th>
-                                <th>Loose Unit</th>
+                                <th>Whole / Loose</th>
                                 <th>Status</th>
                                 <th>Aksyon</th>
                             </tr>
@@ -442,7 +501,10 @@
         <div id="branchSection" class="role-section">
             <div class="card">
                 <div class="card-header">
-                    <h3>Branch Order Center (<span id="branchCodeDisplay">-</span>)</h3>
+                    <div>
+                        <h3>Branch Order Center (<span id="branchCodeDisplay">-</span>)</h3>
+                        <p style="font-size: 13px; color: var(--text-muted);">Pumili ng target delivery date at i-add ang mga kailangang items.</p>
+                    </div>
                     <div>
                         <label style="font-size: 13px; font-weight: 600; margin-right: 8px;">Target Delivery Date:</label>
                         <input type="date" id="orderDatePicker" required>
@@ -460,6 +522,7 @@
                             <tr>
                                 <th>Branch Code</th>
                                 <th>Deskripsyon</th>
+                                <th>Presyo</th>
                                 <th>Commissary</th>
                                 <th>Whole Option</th>
                                 <th>Loose Option</th>
@@ -469,7 +532,7 @@
                             </tr>
                         </thead>
                         <tbody id="branchOrderItemsTable">
-                            <tr><td colspan="8" style="text-align:center; color: var(--text-muted);">Naglo-load ng mga aktibong produkto...</td></tr>
+                            <tr><td colspan="9" style="text-align:center; color: var(--text-muted);">Naglo-load ng mga aktibong produkto...</td></tr>
                         </tbody>
                     </table>
                     <div id="noResultsMsg" style="display: none; text-align: center; padding: 20px; color: var(--text-muted);">
@@ -487,6 +550,7 @@
                                     <th>Branch Code</th>
                                     <th>SAP Code (Ref)</th>
                                     <th>Deskripsyon</th>
+                                    <th>Presyo</th>
                                     <th>Order Type</th>
                                     <th>Quantity</th>
                                     <th>Commissary</th>
@@ -503,7 +567,7 @@
                 </div>
             </div>
 
-            <!-- Branch Manager: Inactive Products Drawer / Control -->
+            <!-- Branch: Inactive Products Drawer -->
             <div class="card">
                 <div class="card-header collapsible-trigger" onclick="toggleInactiveDrawer()">
                     <h3 style="display: flex; align-items: center; gap: 8px;">
@@ -514,7 +578,7 @@
                 </div>
                 <div id="inactiveDrawerBody" style="display: none;">
                     <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">
-                        Ang mga produktong ito ay hindi lumilitaw sa search bar at hindi ma-o-order. I-click ang "I-reactivate" para ibalik sa active list.
+                        Nakatago ang mga aytem na ito sa search bar at ordering view. I-click ang "I-reactivate" para ibalik.
                     </p>
                     <div class="table-responsive">
                         <table>
@@ -545,28 +609,23 @@
                 <div class="card-header">
                     <div>
                         <h3>Commissary A - Meat Orders (SAP B1 Ready)</h3>
-                        <p style="font-size: 13px; color: var(--text-muted);">Kino-kopya ang <b>SAP B1 Code (Code B)</b>, Description, at Eksaktong Measurement para sa Google Sheets.</p>
+                        <p style="font-size: 13px; color: var(--text-muted);">Buksan ang partikular na order ng branch para makita ang breakdown at kopyahin ang SAP Code, Description, at Presyo.</p>
                     </div>
-                    <button class="btn-copy-sap" onclick="copyTableForSAP('commissaryAOrdersTable')">
-                        📋 Kopyahin Lahat para sa Google Sheets (SAP)
-                    </button>
                 </div>
                 <div class="table-responsive">
                     <table>
                         <thead>
                             <tr>
-                                <th>Order ID</th>
+                                <th>Order Ref</th>
                                 <th>Branch</th>
-                                <th>SAP B1 Code</th>
-                                <th>Branch Code (Ref)</th>
-                                <th>Item Description</th>
-                                <th>Quantity & UoM</th>
                                 <th>Delivery Date</th>
+                                <th>Total Items</th>
+                                <th>Order Timestamp</th>
                                 <th>Aksyon</th>
                             </tr>
                         </thead>
-                        <tbody id="commissaryAOrdersTable">
-                            <tr><td colspan="8" style="text-align:center; color: var(--text-muted);">Naglo-load ng orders...</td></tr>
+                        <tbody id="commissaryAOrdersSummaryTable">
+                            <tr><td colspan="6" style="text-align:center; color: var(--text-muted);">Naglo-load ng orders...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -581,31 +640,64 @@
                 <div class="card-header">
                     <div>
                         <h3>Commissary B - Fresh Produce Orders</h3>
-                        <p style="font-size: 13px; color: var(--text-muted);">Kino-kopya ang Item Code, Description, at Qty para sa Google Sheets inventory monitoring.</p>
+                        <p style="font-size: 13px; color: var(--text-muted);">Buksan ang order mula sa branch para kopyahin ang data para sa resibo at inventory monitoring.</p>
                     </div>
-                    <button class="btn-copy-sap" onclick="copyTableForSAP('commissaryBOrdersTable')">
-                        📋 Kopyahin Lahat para sa Google Sheets
-                    </button>
                 </div>
                 <div class="table-responsive">
                     <table>
                         <thead>
                             <tr>
-                                <th>Order ID</th>
+                                <th>Order Ref</th>
                                 <th>Branch</th>
-                                <th>SAP / Item Code</th>
-                                <th>Branch Code (Ref)</th>
-                                <th>Item Description</th>
-                                <th>Quantity & UoM</th>
                                 <th>Delivery Date</th>
+                                <th>Total Items</th>
+                                <th>Order Timestamp</th>
                                 <th>Aksyon</th>
                             </tr>
                         </thead>
-                        <tbody id="commissaryBOrdersTable">
-                            <tr><td colspan="8" style="text-align:center; color: var(--text-muted);">Naglo-load ng orders...</td></tr>
+                        <tbody id="commissaryBOrdersSummaryTable">
+                            <tr><td colspan="6" style="text-align:center; color: var(--text-muted);">Naglo-load ng orders...</td></tr>
                         </tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         ORDER DETAILS MODAL (Lalabas lang kapag binuksan ang order)
+         ========================================== -->
+    <div id="orderDetailsModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h3 id="modalOrderRefTitle" style="font-size: 18px;">Order Details</h3>
+                    <p id="modalOrderSubtitle" style="font-size: 13px; color: var(--text-muted);">-</p>
+                </div>
+                <button class="modal-close-btn" onclick="closeOrderModal()">&times;</button>
+            </div>
+
+            <!-- Dito lang lalabas ang Copy buttons -->
+            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 14px;">
+                <button class="btn-copy-sap" id="btnCopySapAll" onclick="copyModalOrderForSAP()">
+                    📋 Kopyahin Lahat (Code, Description, Price, Qty)
+                </button>
+            </div>
+
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>SAP B1 Code</th>
+                            <th>Branch Code</th>
+                            <th>Item Description</th>
+                            <th>Price (PHP)</th>
+                            <th>Quantity & UoM</th>
+                            <th>Aksyon</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modalOrderItemsTable"></tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -628,6 +720,7 @@
         let currentActiveUser = null;
         let currentUserBranchCode = "";
         let cart = [];
+        let currentModalOrderItems = [];
 
         // 5-Min Auto Logout
         (function() {
@@ -673,10 +766,10 @@
                             listenToBranchProducts();
                         } else if (data.role === "commissaryA") {
                             document.getElementById('commissaryASection').style.display = 'block';
-                            listenToOrders("commissaryA", "commissaryAOrdersTable");
+                            listenToCommissarySummary("commissaryA", "commissaryAOrdersSummaryTable");
                         } else if (data.role === "commissaryB") {
                             document.getElementById('commissaryBSection').style.display = 'block';
-                            listenToOrders("commissaryB", "commissaryBOrdersTable");
+                            listenToCommissarySummary("commissaryB", "commissaryBOrdersSummaryTable");
                         }
                     } else {
                         const branchCode = prompt("Unang login! Ilagay ang Branch Code (hal. SO3, GB5, ATC):");
@@ -697,12 +790,18 @@
             }
         });
 
-        // 1. HEAD OFFICE: ADD / UPDATE PRODUCT
+        // 1. HEAD OFFICE: TOGGLE FORM & ADD PRODUCT
+        function toggleAddProductForm() {
+            const container = document.getElementById('addProductContainer');
+            container.style.display = (container.style.display === 'none' || container.style.display === '') ? 'block' : 'none';
+        }
+
         document.getElementById('productMasterForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const branchCode = document.getElementById('prodBranchCode').value.trim().toUpperCase();
             const sapCode = document.getElementById('prodSapCode').value.trim().toUpperCase();
             const name = document.getElementById('prodName').value.trim();
+            const price = parseFloat(document.getElementById('prodPrice').value) || 0;
             const commissary = document.getElementById('prodCommissary').value;
             const wholeUnit = document.getElementById('prodWholeUnit').value.trim();
             const looseUnit = document.getElementById('prodLooseUnit').value.trim();
@@ -711,14 +810,16 @@
                 branchCode: branchCode,
                 sapCode: sapCode,
                 name: name,
+                price: price,
                 commissary: commissary,
                 wholeUnit: wholeUnit,
                 looseUnit: looseUnit,
                 status: "active",
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             }).then(() => {
-                alert("Matagumpay na nai-save ang produkto at mapping!");
+                alert("Matagumpay na naidagdag ang produkto sa Firebase!");
                 document.getElementById('productMasterForm').reset();
+                toggleAddProductForm();
             }).catch(err => {
                 alert("Error sa pag-save: " + err.message);
             });
@@ -730,7 +831,7 @@
                 const tbody = document.getElementById('adminProductsMasterTable');
                 tbody.innerHTML = '';
                 if (snapshot.empty) {
-                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--text-muted);">Wala pang naka-register na produkto.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--text-muted);">Wala pang produkto. Gamitin ang "Magdagdag ng Bagong Produkto" button sa itaas.</td></tr>';
                     return;
                 }
                 snapshot.forEach(doc => {
@@ -741,9 +842,9 @@
                         <td><b>${p.branchCode}</b></td>
                         <td><b>${p.sapCode}</b></td>
                         <td>${p.name}</td>
+                        <td>PHP ${(p.price || 0).toFixed(2)}</td>
                         <td><span class="tag-pill ${p.commissary === 'commissaryA' ? 'tag-meat' : 'tag-veg'}">${p.commissary === 'commissaryA' ? 'Meat (SAP)' : 'Produce'}</span></td>
-                        <td>${p.wholeUnit}</td>
-                        <td>${p.looseUnit}</td>
+                        <td>${p.wholeUnit} / ${p.looseUnit}</td>
                         <td><span class="tag-pill ${statusVal === 'active' ? 'tag-active' : 'tag-inactive'}">${statusVal.toUpperCase()}</span></td>
                         <td>
                             <button class="btn-action ${statusVal === 'active' ? 'btn-action-warning' : 'btn-action-success'}" onclick="toggleProductStatus('${doc.id}', '${statusVal}')">
@@ -763,7 +864,7 @@
             }
         }
 
-        // 2. TOGGLE PRODUCT STATUS (Active / Inactive) - magagamit ni Admin at Branch Manager
+        // Toggle Status
         function toggleProductStatus(docId, currentStatus) {
             const newStatus = (currentStatus === 'active') ? 'inactive' : 'active';
             const actionText = (newStatus === 'inactive') ? 'I-inactive' : 'I-activate';
@@ -777,11 +878,11 @@
             }).then(() => {
                 alert(`Naging ${newStatus.toUpperCase()} na ang produkto.`);
             }).catch(err => {
-                alert("Error sa pag-update ng status: " + err.message);
+                alert("Error sa pag-update: " + err.message);
             });
         }
 
-        // 3. BRANCH: PRODUCTS LOADER & ORDERING (Hiwalay ang Active at Inactive)
+        // 2. BRANCH: PRODUCTS LOADER & ORDERING
         function listenToBranchProducts() {
             db.collection("products").onSnapshot((snapshot) => {
                 const activeTbody = document.getElementById('branchOrderItemsTable');
@@ -803,6 +904,7 @@
                         tr.innerHTML = `
                             <td class="item-branch-code"><b>${item.branchCode}</b></td>
                             <td class="item-name">${item.name}</td>
+                            <td>PHP ${(item.price || 0).toFixed(2)}</td>
                             <td><span class="tag-pill ${item.commissary === 'commissaryA' ? 'tag-meat' : 'tag-veg'}">${item.commissary === 'commissaryA' ? 'Meat' : 'Produce'}</span></td>
                             <td>${item.wholeUnit}</td>
                             <td>${item.looseUnit}</td>
@@ -816,12 +918,12 @@
                                 </div>
                             </td>
                             <td>
-                                <button class="btn-add-cart" onclick="addToCart('${item.branchCode}', '${item.sapCode}', '${item.name}', '${item.commissary}', 'qty-${doc.id}', 'type-${doc.id}')">
+                                <button class="btn-add-cart" onclick="addToCart('${item.branchCode}', '${item.sapCode}', '${item.name}', ${item.price || 0}, '${item.commissary}', 'qty-${doc.id}', 'type-${doc.id}')">
                                     🛒 Add to Cart
                                 </button>
                             </td>
                             <td>
-                                <button class="btn-action btn-action-warning" onclick="toggleProductStatus('${doc.id}', 'active')" title="I-inactive para mawala sa search at order bar">
+                                <button class="btn-action btn-action-warning" onclick="toggleProductStatus('${doc.id}', 'active')" title="I-inactive para mawala sa search at ordering table">
                                     Mark Inactive
                                 </button>
                             </td>
@@ -849,7 +951,7 @@
                 document.getElementById('inactiveCountBadge').innerText = inactiveCount;
 
                 if (activeCount === 0) {
-                    activeTbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--text-muted);">Walang aktibong produkto na available para sa order.</td></tr>';
+                    activeTbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color: var(--text-muted);">Walang aktibong produkto na available para sa order.</td></tr>';
                 }
                 if (inactiveCount === 0) {
                     inactiveTbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--text-muted);">Walang inactive na produkto sa kasalukuyan.</td></tr>';
@@ -869,7 +971,7 @@
             }
         }
 
-        function addToCart(branchCode, sapCode, name, commissary, qtyId, typeId) {
+        function addToCart(branchCode, sapCode, name, price, commissary, qtyId, typeId) {
             const qtyVal = parseFloat(document.getElementById(qtyId).value);
             const typeVal = document.getElementById(typeId).value;
 
@@ -882,6 +984,7 @@
                 branchCode: branchCode,
                 sapCode: sapCode,
                 name: name,
+                price: price,
                 commissary: commissary,
                 qty: qtyVal,
                 measurementChoice: typeVal
@@ -908,6 +1011,7 @@
                     <td>${item.branchCode}</td>
                     <td><b>${item.sapCode}</b></td>
                     <td>${item.name}</td>
+                    <td>PHP ${item.price.toFixed(2)}</td>
                     <td>${item.measurementChoice}</td>
                     <td><b>${item.qty}</b></td>
                     <td>${item.commissary === 'commissaryA' ? 'Meat' : 'Produce'}</td>
@@ -946,8 +1050,9 @@
                     branchCode: currentUserBranchCode,
                     userEmail: currentActiveUser.email,
                     branchItemCode: item.branchCode,
-                    sapItemCode: item.sapCode, // SAP B1 Code (Code B)
+                    sapItemCode: item.sapCode,
                     itemName: item.name,
+                    price: item.price,
                     qty: item.qty,
                     measurement: item.measurementChoice,
                     commissary: item.commissary,
@@ -966,8 +1071,8 @@
             });
         });
 
-        // 4. COMMISSARIES VIEW & REAL-TIME LISTENER
-        function listenToOrders(commissaryKey, tableBodyId) {
+        // 3. COMMISSARY ORDERS SUMMARY (Grouping by Order Ref)
+        function listenToCommissarySummary(commissaryKey, tableBodyId) {
             db.collection("orders")
               .where("commissary", "==", commissaryKey)
               .onSnapshot((snapshot) => {
@@ -975,25 +1080,38 @@
                 tbody.innerHTML = "";
 
                 if (snapshot.empty) {
-                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--text-muted);">Wala pang natatanggap na order.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--text-muted);">Wala pang natatanggap na order mula sa mga branch.</td></tr>';
                     return;
                 }
 
+                // Group by orderRef
+                const ordersMap = {};
                 snapshot.forEach((doc) => {
-                    const o = doc.data();
+                    const data = doc.data();
+                    const ref = data.orderRef || "N/A";
+                    if (!ordersMap[ref]) {
+                        ordersMap[ref] = {
+                            orderRef: ref,
+                            branchCode: data.branchCode || "N/A",
+                            deliveryDate: data.deliveryDate || "-",
+                            timestamp: data.timestamp ? new Date(data.timestamp.toDate()).toLocaleString() : "Just now",
+                            items: []
+                        };
+                    }
+                    ordersMap[ref].items.push(data);
+                });
+
+                Object.values(ordersMap).forEach((group) => {
                     const tr = document.createElement('tr');
-                    tr.className = "order-row";
                     tr.innerHTML = `
-                        <td>${o.orderRef || '-'}</td>
-                        <td><b>${o.branchCode || '-'}</b></td>
-                        <td class="sap-code" style="font-weight:700; color:#0284c7;">${o.sapItemCode}</td>
-                        <td style="color: var(--text-muted);">${o.branchItemCode}</td>
-                        <td class="item-name">${o.itemName}</td>
-                        <td class="item-qty-uom" style="font-weight:700;">${o.qty} ${o.measurement}</td>
-                        <td>${o.deliveryDate || '-'}</td>
+                        <td><b>${group.orderRef}</b></td>
+                        <td><b>${group.branchCode}</b></td>
+                        <td>${group.deliveryDate}</td>
+                        <td>${group.items.length} item(s)</td>
+                        <td style="color: var(--text-muted); font-size: 12px;">${group.timestamp}</td>
                         <td>
-                            <button class="btn-action btn-action-primary" onclick="copySingleItemForSAP('${o.sapItemCode}', '${o.itemName}', '${o.qty} ${o.measurement}')">
-                                📋 Kopyahin
+                            <button class="btn-action btn-action-primary" onclick='openOrderModal(${JSON.stringify(group).replace(/'/g, "&apos;")})'>
+                                📂 Buksan ang Order
                             </button>
                         </td>
                     `;
@@ -1003,43 +1121,73 @@
         }
 
         // ==========================================
-        // CLIPBOARD EXPORTERS FOR GOOGLE SHEETS / SAP B1
+        // MODAL VIEW & CLIPBOARD ACTIONS (CODE, DESC, PRICE)
         // ==========================================
-        function copySingleItemForSAP(sapCode, itemName, qtyUom) {
-            const textToCopy = `${sapCode}\t${itemName}\t${qtyUom}`;
-            navigator.clipboard.writeText(textToCopy).then(() => {
-                alert(`Nakopya para sa Sheets/SAP:\n${sapCode}\t${itemName}\t${qtyUom}`);
-            }).catch(err => alert("Error: " + err.message));
+        function openOrderModal(groupData) {
+            currentModalOrderItems = groupData.items || [];
+            document.getElementById('modalOrderRefTitle').innerText = `Order: ${groupData.orderRef} (${groupData.branchCode})`;
+            document.getElementById('modalOrderSubtitle').innerText = `Delivery Date: ${groupData.deliveryDate} | Dami ng items: ${currentModalOrderItems.length}`;
+
+            const tbody = document.getElementById('modalOrderItemsTable');
+            tbody.innerHTML = "";
+
+            currentModalOrderItems.forEach((item) => {
+                const priceFormatted = (item.price || 0).toFixed(2);
+                const tr = document.createElement('tr');
+                tr.className = "modal-order-row";
+                tr.innerHTML = `
+                    <td class="m-sap-code" style="font-weight:700; color:#0284c7;">${item.sapItemCode}</td>
+                    <td style="color: var(--text-muted);">${item.branchItemCode}</td>
+                    <td class="m-item-name">${item.itemName}</td>
+                    <td class="m-item-price">PHP ${priceFormatted}</td>
+                    <td class="m-item-qty-uom"><b>${item.qty}</b> ${item.measurement}</td>
+                    <td>
+                        <button class="btn-action btn-action-primary" onclick="copySingleItemModal('${item.sapItemCode}', '${item.itemName}', '${priceFormatted}', '${item.qty} ${item.measurement}')">
+                            📋 Kopyahin
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('orderDetailsModal').style.display = 'flex';
         }
 
-        function copyTableForSAP(tableBodyId) {
-            const tbody = document.getElementById(tableBodyId);
-            const rows = tbody.querySelectorAll('.order-row');
+        function closeOrderModal() {
+            document.getElementById('orderDetailsModal').style.display = 'none';
+        }
 
-            if (!rows.length) {
-                alert("Walang orders na makokopya sa mesa.");
+        // 1. Kopyahin ang ISANG linya (SAP Code, Description, Price, Qty)
+        function copySingleItemModal(sapCode, name, price, qtyUom) {
+            // Tab-delimited para madaling i-paste sa SAP B1 or Sheets: Code [tab] Description [tab] Price [tab] Qty
+            const textToCopy = `${sapCode}\t${name}\t${price}\t${qtyUom}`;
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                alert(`Nakopya sa clipboard:\n\nCode: ${sapCode}\nDesc: ${name}\nPrice: PHP ${price}\nQty: ${qtyUom}\n\nMaaari mo na itong i-paste sa SAP B1 o resibo template!`);
+            }).catch(err => alert("Error sa pagkopya: " + err.message));
+        }
+
+        // 2. Kopyahin ang LAHAT ng items sa binuksang order
+        function copyModalOrderForSAP() {
+            if (!currentModalOrderItems.length) {
+                alert("Walang items na makokopya.");
                 return;
             }
 
             let tsvRows = [];
-            rows.forEach(row => {
-                const sapCode = row.querySelector('.sap-code')?.innerText.trim() || '';
-                const name = row.querySelector('.item-name')?.innerText.trim() || '';
-                const qtyUom = row.querySelector('.item-qty-uom')?.innerText.trim() || '';
+            currentModalOrderItems.forEach(item => {
+                const sapCode = item.sapItemCode || '';
+                const name = item.itemName || '';
+                const price = (item.price || 0).toFixed(2);
+                const qtyUom = `${item.qty} ${item.measurement}`;
 
-                if (sapCode && name && qtyUom) {
-                    tsvRows.push(`${sapCode}\t${name}\t${qtyUom}`);
+                if (sapCode && name) {
+                    tsvRows.push(`${sapCode}\t${name}\t${price}\t${qtyUom}`);
                 }
             });
 
-            if (!tsvRows.length) {
-                alert("Walang nahanap na valid data.");
-                return;
-            }
-
             const clipboardText = tsvRows.join('\n');
             navigator.clipboard.writeText(clipboardText).then(() => {
-                alert(`Matagumpay na nakopya ang ${tsvRows.length} item(s)!\n\nFormat: [SAP Code] [Description] [Quantity & UoM]\nI-paste sa Google Sheets (Column A) gamit ang Ctrl + V bago ilipat sa SAP B1.`);
+                alert(`Matagumpay na nakopya ang ${tsvRows.length} item(s)!\n\nFormat:\n[SAP Code]  [Description]  [Price]  [Quantity & UoM]\n\nI-paste na ito nang diretso sa SAP B1 o spreadsheet para sa paggawa ng resibo.`);
             }).catch(err => alert("Error sa pagkopya: " + err.message));
         }
 
