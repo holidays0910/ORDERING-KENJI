@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Head Office - KusinaERP</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <a href="#" class="brand">🍳 KusinaERP <span>Head Office / Accounting</span></a>
+    <div class="user-info">
+      <span class="badge badge-admin" id="user-display">Admin: Master Auditor</span>
+      <button class="btn btn-secondary btn-sm" onclick="logoutUser()">Logout</button>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="card">
+      <div class="card-title">
+        <span>📦 Product Master & Bulk Upload (SAP B1 Sync)</span>
+        <button class="btn btn-primary btn-sm" onclick="downloadCSVTemplate()">📥 Download Blank CSV Template</button>
+      </div>
+      <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">
+        Default SAP Column Pattern: <b>[Column A: SAP Code] [Column B: Branch Code] [Column C: Item Description] [Column D: Category] [Column E: Whole Price] [Column F: Loose Price] [Column G: Conversion Factor] [Column H: Buffer Limit]</b>
+      </p>
+      
+      <div style="display: flex; gap: 1rem; align-items: flex-end;">
+        <div style="flex: 1;">
+          <label>Pumili ng CSV / Excel File</label>
+          <input type="file" id="csv-file-input" accept=".csv">
+        </div>
+        <button class="btn btn-success" onclick="processCSVUpload()">Upload & Map Columns</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span>🔍 Smart Reporting: Variance & Shrinkage Analytics</span>
+        <div style="display: flex; gap: 0.5rem;">
+          <button class="btn btn-secondary btn-sm" onclick="copyTableToGoogleSheets()">📋 Copy to Google Sheets</button>
+          <button class="btn btn-secondary btn-sm" onclick="window.print()">🖨️ Print Report</button>
+        </div>
+      </div>
+      
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+        <div>
+          <label>Filter Date Range</label>
+          <input type="date" id="report-from">
+        </div>
+        <div>
+          <label>To</label>
+          <input type="date" id="report-to">
+        </div>
+        <div>
+          <label>Station / Branch</label>
+          <select id="report-branch">
+            <option value="all">All Branches & Commissaries</option>
+            <option value="ATC">Branch ATC</option>
+            <option value="MOA">Branch MOA</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table id="variance-table">
+          <thead>
+            <tr>
+              <th>Item Description</th>
+              <th>Ordered/Dispatched</th>
+              <th>Physical Count</th>
+              <th>Variance (Losing)</th>
+              <th>Liability Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Beef Tapa Marinated (kg)</td>
+              <td>50 kg</td>
+              <td>38 kg</td>
+              <td style="color: #ef4444; font-weight: 700;">-12 kg (Shrinkage)</td>
+              <td><span class="badge badge-warning">Under Investigation</span></td>
+            </tr>
+            <tr>
+              <td>Cooking Oil (18L Tin)</td>
+              <td>10 Tins</td>
+              <td>10 Tins</td>
+              <td style="color: #10b981; font-weight: 700;">0 (Balanced)</td>
+              <td><span class="badge badge-branch">Verified</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span>🚚 3PL Logistics & Petty Cash Reimbursements</span>
+      </div>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Courier</th>
+              <th>Route</th>
+              <th>Toll + Fare + Tip</th>
+              <th>Abono ng Commissary?</th>
+              <th>Accounting Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>2026-10-30</td>
+              <td>Lalamove MPV</td>
+              <td>Commi A ➔ Branch ATC</td>
+              <td>₱650 (₱480 fare + ₱120 toll + ₱50 tip)</td>
+              <td><b style="color: #2563eb;">Yes (₱650)</b></td>
+              <td><button class="btn btn-sm btn-primary" onclick="alert('Reimbursement Marked as Paid via GCash/Bank!')">Mark as Reimbursed</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="firebase-config.js"></script>
+  <script src="auth.js"></script>
+  <script src="admin.js"></script>
+  <script>
+    enforceRoleAccess(['admin']);
+  </script>
+</body>
+</html>
