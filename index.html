@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Business App Login</title>
+    <!-- Script para pigilan ang Back Button (GitHub Redirect issue) -->
+    <script>
+        history.pushState(null, null, location.href);
+        window.onpopstate = function () {
+            history.go(1);
+        };
+    </script>
+    
+    <!-- Firebase SDK (CDN) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <h2>Login</h2>
+    <button id="googleLoginBtn">Login with Gmail</button>
+    <br><br>
+    <a href="#" id="forgotPasswordLink">Forgot Password?</a>
+
+    <script>
+        // Firebase Configuration (Na-update mula sa iyong image at code)
+        const firebaseConfig = {
+          apiKey: "AIzaSyBNUNZOcFBbaxTgG4oINS6WUZj_PVLCWtk",
+          authDomain: "ordering-kenji.firebaseapp.com",
+          projectId: "ordering-kenji",
+          storageBucket: "ordering-kenji.firebasestorage.app",
+          messagingSenderId: "22937850065",
+          appId: "1:22937850065:web:978cdd85eae967ed6eb5f0",
+          measurementId: "G-WD8ZGRBRXN"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // Google Login
+        document.getElementById('googleLoginBtn').addEventListener('click', function() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider).then((result) => {
+                // Pagka-login, pupunta sa nakatagong dashboard
+                window.location.href = "dashboard.html";
+            }).catch((error) => {
+                alert("Login Failed: " + error.message);
+            });
+        });
+
+        // Forgot Password
+        document.getElementById('forgotPasswordLink').addEventListener('click', function(e) {
+            e.preventDefault();
+            const email = prompt("Ilagay ang iyong Gmail address para sa password reset:");
+            if(email) {
+                auth.sendPasswordResetEmail(email).then(() => {
+                    alert("Naipadala na ang password reset link sa iyong email.");
+                }).catch((error) => {
+                    alert("Error: " + error.message);
+                });
+            }
+        });
+    </script>
+</body>
+</html>
