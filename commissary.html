@@ -1,0 +1,523 @@
+<!-- ==========================================================================
+     KUSINA ERP - COMMISSARY OPERATIONS PORTAL (commissary.html)
+     DEVELOPER TUTORIAL & ARCHITECTURE:
+     - Approach: Executive Dashboard as main landing view.
+     - Navigation: Three-Dot Menu (⋮) on navbar toggles views and profile editor.
+     - Features: Real-time search by POS/SAP/Name, Edit & Delete product controls,
+       on-the-spot spoilage adjuster, and swipe-to-action transitions.
+     - Developer Credit: Programmed by Renz Aldrin Gomez, 2026.
+     ========================================================================== -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Commissary Portal - KusinaERP</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="#" class="brand" id="main-brand-header">
+      🍳 <span id="brand-header-title">KusinaERP</span> 
+      <span id="commissary-station-title">Commissary Hub</span>
+    </a>
+    <div class="user-info" style="display: flex; align-items: center; gap: 0.75rem;">
+      <span class="badge badge-commissary" id="user-display">Commissary Hub</span>
+      
+      <!-- Three-Dot Quick Menu Button -->
+      <div style="position: relative;">
+        <button class="btn btn-secondary btn-sm" id="btn-three-dots" onclick="toggleCommissaryMenu()" style="font-size: 1.25rem; line-height: 1; padding: 0.25rem 0.6rem; cursor: pointer;">⋮</button>
+        
+        <!-- Three-Dot Dropdown Content -->
+        <div id="commissary-dropdown-menu" style="display: none; position: absolute; right: 0; top: 110%; background: #fff; border: 1px solid #cbd5e1; border-radius: 0.5rem; box-shadow: 0 8px 20px rgba(0,0,0,0.15); width: 250px; z-index: 100;">
+          <a href="javascript:void(0)" onclick="switchCommissaryView('dashboard')" style="display: block; padding: 0.75rem 1rem; color: #1e293b; text-decoration: none; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem;">📊 Analytics Dashboard</a>
+          <a href="javascript:void(0)" onclick="switchCommissaryView('orders')" style="display: block; padding: 0.75rem 1rem; color: #1e293b; text-decoration: none; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem;">📋 Branch Orders Queue</a>
+          <a href="javascript:void(0)" onclick="switchCommissaryView('inventory')" style="display: block; padding: 0.75rem 1rem; color: #1e293b; text-decoration: none; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem;">🏭 Inventory & Product Master</a>
+          <a href="javascript:void(0)" onclick="switchCommissaryView('returns')" style="display: block; padding: 0.75rem 1rem; color: #1e293b; text-decoration: none; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem;">🔍 Returns & DR Deduction</a>
+          <a href="javascript:void(0)" onclick="openCommissaryProfileModal()" style="display: block; padding: 0.75rem 1rem; color: #2563eb; font-weight: 600; text-decoration: none; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem;">👤 I-edit ang Profile</a>
+          <a href="javascript:void(0)" onclick="logoutUser()" style="display: block; padding: 0.75rem 1rem; color: #ef4444; font-weight: 600; text-decoration: none; font-size: 0.85rem;">🚪 Logout</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    
+    <!-- ========================================================
+         VIEW 1: EXECUTIVE ANALYTICS DASHBOARD (Main Landing Page)
+         ======================================================== -->
+    <div id="view-commissary-dashboard" class="comm-view-section">
+      <div class="card">
+        <div class="card-title">
+          <span>📊 Commissary Operations & Workload Analytics</span>
+          <button class="btn btn-primary btn-sm" onclick="loadCommissaryAnalytics()">🔄 Refresh Reports</button>
+        </div>
+        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1.25rem;">
+          Buod ng kargada at performance para sa iyong Commissary Hub batay sa aktwal na data sa Firestore.
+        </p>
+
+        <!-- KPI Widgets -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+          <div style="background: #f8fafc; border-left: 4px solid #2563eb; padding: 1rem; border-radius: 0.375rem;">
+            <div style="font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 700;">Kabuuang Na-order</div>
+            <div style="font-size: 1.6rem; font-weight: 800; color: #1e293b; margin-top: 0.25rem;" id="comm-kpi-orders">0</div>
+          </div>
+          <div style="background: #f8fafc; border-left: 4px solid #10b981; padding: 1rem; border-radius: 0.375rem;">
+            <div style="font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 700;">Halaga ng Na-dispatch</div>
+            <div style="font-size: 1.6rem; font-weight: 800; color: #10b981; margin-top: 0.25rem;" id="comm-kpi-value">₱0.00</div>
+          </div>
+          <div style="background: #f8fafc; border-left: 4px solid #f59e0b; padding: 1rem; border-radius: 0.375rem;">
+            <div style="font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 700;">Items Below Buffer</div>
+            <div style="font-size: 1.6rem; font-weight: 800; color: #d97706; margin-top: 0.25rem;" id="comm-kpi-buffer">0</div>
+          </div>
+          <div style="background: #f8fafc; border-left: 4px solid #8b5cf6; padding: 1rem; border-radius: 0.375rem;">
+            <div style="font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 700;">Aktibong Stations</div>
+            <div style="font-size: 1.6rem; font-weight: 800; color: #1e293b; margin-top: 0.25rem;" id="comm-kpi-stations">0</div>
+          </div>
+        </div>
+
+        <!-- Charts Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem;">
+          <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 1rem;">
+            <b style="display: block; font-size: 0.95rem; margin-bottom: 0.5rem; color: #1e293b;">🏢 Branch Orders Demand (Volume)</b>
+            <div style="position: relative; height: 250px;">
+              <canvas id="chart-comm-orders"></canvas>
+            </div>
+          </div>
+          <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 1rem;">
+            <b style="display: block; font-size: 0.95rem; margin-bottom: 0.5rem; color: #1e293b;">📍 Station Workload Distribution</b>
+            <div style="position: relative; height: 250px;">
+              <canvas id="chart-comm-stations"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================
+         VIEW 2: INCOMING BRANCH ORDERS QUEUE
+         ======================================================== -->
+    <div id="view-commissary-orders" class="comm-view-section" style="display: none;">
+      <div class="card">
+        <div class="card-title">
+          <span>📋 Incoming Branch Orders (Station Picking Queue)</span>
+          <button class="btn btn-primary btn-sm" onclick="loadIncomingOrders()">🔄 Refresh Orders</button>
+        </div>
+        <div style="margin-bottom: 1rem;">
+            <input type="text" id="comm-orders-search" placeholder="🔎 Mag-search ng Order ID / PO Number, Petsa, o Branch Destination..." oninput="filterCommissaryOrdersTable()" style="font-size: 0.9rem;">
+          </div>
+          <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Order ID & Petsa</th>
+                <th>Branch Destination</th>
+                <th>Items Ordered</th>
+                <th>Kabuuang Halaga</th>
+                <th>Status</th>
+                <th>Aksyon / Manage</th>
+              </tr>
+            </thead>
+            <tbody id="incoming-orders-tbody">
+              <tr>
+                <td colspan="6" style="text-align: center; color: #94a3b8; padding: 1.5rem;">
+                  Kinukuha ang mga orders mula sa Firestore...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================
+         VIEW 3: INVENTORY MASTER WITH SEARCH & BULK TOOLS
+         ======================================================== -->
+    <div id="view-commissary-inventory" class="comm-view-section" style="display: none;">
+      <div class="card" style="padding: 1rem 1.25rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <b style="font-size: 0.85rem;">📍 Station:</b>
+            <input type="text" id="commissary-new-station" placeholder="Hal: Cold Storage 1" style="width: 170px; padding: 0.35rem 0.5rem; font-size: 0.85rem;">
+            <button type="button" class="btn btn-primary btn-sm" onclick="addStationFromCommissary()">➕ Add Station</button>
+          </div>
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <b style="font-size: 0.85rem;">⚖️ UOM:</b>
+            <select id="commissary-uom-type" style="width: 110px; padding: 0.35rem 0.5rem; font-size: 0.85rem;">
+              <option value="whole">Whole</option>
+              <option value="loose">Loose</option>
+            </select>
+            <input type="text" id="commissary-new-uom" placeholder="Hal: Box o Kg" style="width: 130px; padding: 0.35rem 0.5rem; font-size: 0.85rem;">
+            <button type="button" class="btn btn-primary btn-sm" onclick="addUOMFromCommissary()">➕ Add UOM</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>🏭 Live Stock & Storage Station Locator</span>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button class="btn btn-primary btn-sm" onclick="exportCommissaryProductsCSV()">📥 Extract Product List (CSV)</button>
+            <button class="btn btn-success btn-sm" onclick="openCommissaryProductModal()">➕ Mag-add ng Produkto</button>
+            <button class="btn btn-secondary btn-sm" onclick="printDeliveryReceiptA4()">🖨️ Print Dispatch DR (A4)</button>
+          </div>
+        </div>
+
+        <!-- Integrated Search Bar, Camera Barcode Scanner & Station Filter -->
+        <div style="display: flex; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap;">
+          <input type="text" id="comm-product-search" placeholder="🔎 I-type ang POS Code, SAP Code, Barcode, o Pangalan..." oninput="filterCommissaryInventoryTable()" style="flex: 2; min-width: 200px; font-size: 0.9rem;">
+          <button type="button" class="btn btn-primary" onclick="openCameraBarcodeScanner('commissary')">📷 Scan Barcode</button>
+          <select id="station-filter" onchange="filterCommissaryInventoryTable()" style="flex: 1; min-width: 160px;">
+            <option value="all">Lahat ng Storage Stations</option>
+          </select>
+        </div>
+
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>POS Code</th>
+                <th>SAP / Sub Code</th>
+                <th>Pangalan ng Produkto</th>
+                <th>📍 Storage Station</th>
+                <th>Whole Price</th>
+                <th>Loose Price</th>
+                <th>Kasalukuyang Stock</th>
+                <th>Buffer Limit</th>
+                <th>Status</th>
+                <th style="width: 180px; text-align: center;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="inventory-tbody">
+              <tr>
+                <td colspan="10" style="text-align: center; color: #94a3b8; padding: 1.5rem;">
+                  Kinukuha ang inventory...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================
+         VIEW 4: RETURNS INSPECTION
+         ======================================================== -->
+    <div id="view-commissary-returns" class="comm-view-section" style="display: none;">
+      <div class="card">
+        <div class="card-title">
+          <span>🔍 Returns Inspection & Auto-DR Deduction</span>
+        </div>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Branch Origin</th>
+                <th>Declared Item</th>
+                <th>Quantity / Weight</th>
+                <th>Driver / Plate</th>
+                <th>Inspect Condition</th>
+                <th>DR Action</th>
+              </tr>
+            </thead>
+            <tbody id="returns-tbody">
+              <tr>
+                <td colspan="6" style="text-align: center; color: #94a3b8; padding: 1.5rem;">
+                  Walang nakabinbing returns manifest mula sa mga branch.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Modal: Commissary Profile Editor -->
+  <div id="commissary-profile-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 480px;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem;">
+        <h3 style="margin: 0; color: #1e293b;">👤 I-edit ang Profile (Commissary)</h3>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeCommissaryProfileModal()">✕</button>
+      </div>
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="prof-email" disabled style="background: #f1f5f9;">
+      </div>
+      <div class="form-group">
+        <label>Buong Pangalan</label>
+        <input type="text" id="prof-name" placeholder="Pangalan ng Staff / Head">
+      </div>
+      <div class="form-group">
+        <label>Assigned Hub / Station</label>
+        <input type="text" id="prof-hub" disabled style="background: #f1f5f9;">
+      </div>
+      <div class="form-group">
+        <label>Bagong Password (Iwanang blangko kung hindi papalitan)</label>
+        <input type="password" id="prof-new-pass" placeholder="••••••••">
+      </div>
+      <button type="button" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;" onclick="saveCommissaryProfile()">💾 I-save ang Profile</button>
+    </div>
+  </div>
+
+  <!-- Modal: Add / Edit Product Modal (Commissary) -->
+  <div id="add-product-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 650px;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem;">
+        <h3 style="color: #1e293b; margin: 0;" id="comm-product-modal-title">➕ Mag-tag ng Produkto</h3>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeAddProductModal()">✕</button>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label>POS Code (Post Code)</label>
+          <input type="text" id="new-item-pos-code" placeholder="Hal: POS-101">
+        </div>
+        <div class="form-group">
+          <label>SAP Code / Sub Code</label>
+          <input type="text" id="new-item-code" placeholder="Hal: SAP-001" required>
+        </div>
+        <div class="form-group">
+          <label>Barcode (Scan / Digits)</label>
+          <div style="display: flex; gap: 0.35rem;">
+            <input type="text" id="new-item-barcode" placeholder="Hal: 4801234567890" style="flex: 1;">
+            <button type="button" class="btn btn-primary btn-sm" onclick="openCameraBarcodeScanner('comm_edit_modal')" title="I-scan ang bagong barcode">📷</button>
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Pangalan ng Produkto (Item Description)</label>
+        <input type="text" id="new-item-name" placeholder="Hal: Beef Tapa o Mantika" required>
+      </div>
+      <div class="form-group">
+        <label>📍 Storage Station kung Saan Itatago</label>
+        <select id="new-storage-station"></select>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label>📦 Whole UOM</label>
+          <select id="new-whole-uom"></select>
+        </div>
+        <div class="form-group">
+          <label>🥢 Loose UOM</label>
+          <select id="new-loose-uom"></select>
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; background: #f8fafc; padding: 0.75rem; border-radius: 0.375rem; border: 1px solid #e2e8f0; margin-bottom: 1rem;">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label>💰 Presyo bawat Whole Unit (₱)</label>
+          <input type="number" id="new-whole-price" oninput="autoComputeCommissaryLoosePrice()" value="0" min="0" step="0.01">
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label>🪙 Presyo bawat Loose Unit (₱)</label>
+          <input type="number" id="new-loose-price" value="0" min="0" step="0.01">
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label>Conversion (Whole to Loose)</label>
+          <input type="number" id="new-conversion-factor" oninput="autoComputeCommissaryLoosePrice()" value="1" min="1">
+        </div>
+        <div class="form-group">
+          <label>Reorder Buffer Limit</label>
+          <input type="number" id="new-buffer-limit" value="5" min="1">
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label>Status ng Produkto:</label>
+          <select id="new-item-status">
+            <option value="active">Active (Lilitaw sa Branch Catalog)</option>
+            <option value="inactive">Inactive (Nakatago / Off-season)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Supplier / Pinagkunan (Optional):</label>
+          <input type="text" id="new-item-supplier" placeholder="Hal: Shera, Mandaue Meat, atbp.">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>📦 Packaging & Packing Instructions</label>
+        <input type="text" id="new-packaging-instructions" placeholder="Hal: I-vacuum pack bawat 1kg bago i-freeze">
+      </div>
+      <button type="button" class="btn btn-success" style="width: 100%; margin-top: 0.5rem;" onclick="saveProductWithStationAndUOM()">💾 I-save ang Produkto sa Database</button>
+    </div>
+  </div>
+
+  <!-- Modal: Commissary Order Management (Swipe to Prepare & Dispatch) -->
+  <div id="commissary-order-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 900px; width: 95%; max-height: 92vh; display: flex; flex-direction: column;">
+      
+      <!-- Modal Header -->
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.75rem; margin-bottom: 1rem;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <h3 style="margin: 0; color: #1e293b; font-size: 1.3rem;" id="com-modal-order-id">PO-000000</h3>
+            <span class="badge badge-warning" id="com-modal-status-badge">Pending Preparation</span>
+          </div>
+          <div style="font-size: 0.85rem; color: #64748b; margin-top: 0.25rem;">
+            Destination: <b id="com-modal-branch-name" style="color: #1e293b;">Branch ATC</b> &nbsp;|&nbsp; 
+            📅 Target Delivery: <b id="com-modal-delivery-date" style="color: #b91c1c;">--</b>
+          </div>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeCommissaryOrderModal()">✕ Isara</button>
+      </div>
+
+      <div style="overflow-y: auto; flex: 1; padding-right: 0.5rem;">
+        
+        <!-- Cold Chain & Insulation Instruction Banner -->
+        <div id="com-modal-instructions-banner" style="background: #eff6ff; border: 1.5px solid #93c5fd; border-radius: 0.5rem; padding: 0.85rem 1rem; margin-bottom: 1rem;">
+          <b style="color: #1e40af; font-size: 0.9rem;">🧊 TAGUBILIN SA PAG-IMPAKE AT TEMPERATURE CONTROL:</b>
+          <p id="com-modal-instructions-text" style="font-size: 0.85rem; color: #1e3a8a; margin: 0.35rem 0 0 0; font-weight: 600;">
+            Walang espesyal na tagubilin.
+          </p>
+        </div>
+
+        <!-- STAGE 1: SWIPE TO ACCEPT & TAKE ORDER -->
+        <div id="com-stage-accept" style="text-align: center; padding: 1rem; background: #fffbeb; border: 1.5px dashed #f59e0b; border-radius: 0.5rem; margin-bottom: 1.25rem;">
+          <b style="color: #92400e; font-size: 0.95rem; display: block; margin-bottom: 0.25rem;">🔒 Hakbang 1: I-swipe para Tanggapin at Simulan ang Pag-pick</b>
+          <small style="color: #78350f; display: block; margin-bottom: 0.75rem;">
+            I-slide ang button sa kanan upang kumpirmahin na tinanggap na ng commissary ang order at pumasok sa "Preparing" status.
+          </small>
+          <div class="swipe-track" id="swipe-track-accept">
+            <span class="swipe-text" id="swipe-text-accept">👉 I-swipe para Ihanda (Take Order) ➔</span>
+            <div class="swipe-btn" id="swipe-btn-accept" data-action="accept">👉</div>
+          </div>
+        </div>
+
+        <!-- STAGE 2: ON-THE-SPOT ORDER ADJUSTMENTS & VERIFICATION (Active in Preparing) -->
+        <div id="com-stage-edit" style="display: none; margin-bottom: 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
+            <b style="color: #1e293b; font-size: 1rem;">📋 Talaan ng Items & On-the-Spot Quantity/Price Adjuster</b>
+            <small style="color: #64748b;">Maaaring baguhin ang Qty o Presyo kung may spoilage o kulang sa stock</small>
+          </div>
+
+          <div class="table-responsive" style="border: 1px solid #cbd5e1; border-radius: 0.375rem; max-height: 260px; overflow-y: auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>POS / SAP Code</th>
+                  <th>Produkto & Station</th>
+                  <th style="width: 130px;">Whole Qty</th>
+                  <th style="width: 130px;">Loose Qty</th>
+                  <th style="width: 120px;">Unit Price</th>
+                  <th>Subtotal</th>
+                </tr>
+              </thead>
+              <tbody id="com-modal-items-tbody"></tbody>
+            </table>
+          </div>
+
+          <!-- Computed Total Banner -->
+          <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border: 1px solid #e2e8f0; padding: 0.75rem 1rem; border-radius: 0.375rem; margin-top: 0.5rem;">
+            <span style="font-size: 0.85rem; color: #475569;">Na-update na Kabuuang Halaga ng Order:</span>
+            <b style="font-size: 1.25rem; color: #2563eb;" id="com-modal-adjusted-total">₱0.00</b>
+          </div>
+        </div>
+
+        <!-- STAGE 3: STOCKMAN & STOCK HEAD VERIFICATION + PROOF OF PHOTO -->
+        <div id="com-stage-verify" style="display: none; background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1.25rem;">
+          <b style="color: #1e293b; font-size: 0.95rem; display: block; margin-bottom: 0.5rem;">
+            🔍 Hakbang 2: Double-Check ng Stockman & Stock Head + Litrato ng Repack
+          </b>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+            <div>
+              <label>Pangalan ng Stockman (Nag-pick/Pack):</label>
+              <input type="text" id="com-verify-stockman" placeholder="Hal: Juan - Meat Line">
+            </div>
+            <div>
+              <label>Pangalan ng Stock Head / Dispatch QA (Nag-check):</label>
+              <input type="text" id="com-verify-stockhead" placeholder="Hal: Rommel - Head Checker">
+            </div>
+          </div>
+
+          <div style="margin-bottom: 1rem;">
+            <label>📸 Proof of Photo bago Isara ang Truck / Box (Opsyonal o Camera Snap):</label>
+            <input type="file" id="com-verify-photo-input" accept="image/*" capture="environment" onchange="previewDispatchPhoto(event)">
+            <div id="com-photo-preview-box" style="display: none; margin-top: 0.5rem;">
+              <img id="com-photo-preview-img" src="" alt="Proof of Photo" style="max-height: 140px; border-radius: 0.375rem; border: 1px solid #cbd5e1;">
+            </div>
+          </div>
+
+          <!-- SWIPE TO CONFIRM DISPATCH -->
+          <div style="text-align: center; margin-top: 1rem;">
+            <small style="color: #475569; display: block; margin-bottom: 0.5rem; font-weight: 600;">
+              Kapag na-double check at nakunan na ng litrato, i-swipe upang i-dispatch patungo sa branch truck:
+            </small>
+            <div class="swipe-track" id="swipe-track-dispatch">
+              <span class="swipe-text" id="swipe-text-dispatch">👉 I-swipe para I-dispatch / Out for Delivery ➔</span>
+              <div class="swipe-btn" id="swipe-btn-dispatch" data-action="dispatch">🚚</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STAGE 4: ACTION SHORTCUTS (Print Slip, 5-Col CSV, Copy) -->
+        <div style="display: flex; gap: 0.5rem; justify-content: flex-end; flex-wrap: wrap; padding-top: 0.75rem; border-top: 1px solid #e2e8f0;">
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-modal-print-slip" onclick="triggerModalPrintSlip()">🖨️ Print 3-Col Slip</button>
+          <button type="button" class="btn btn-success btn-sm" id="btn-modal-download-csv" onclick="triggerModalDownloadCSV()">📥 Download 5-Col CSV</button>
+          <button type="button" class="btn btn-primary btn-sm" id="btn-modal-copy-tsv" onclick="triggerModalCopyTSV()">📋 Copy for Excel</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="firebase-config.js"></script>
+  <script src="app.js"></script>
+  <script>
+    enforceRoleAccess(['commissary', 'admin']);
+    const u = getCurrentUser();
+    if (u) {
+      document.getElementById('user-display').innerText = `${u.branch || 'Commissary Hub'}`;
+      document.getElementById('commissary-station-title').innerText = `${u.branch || 'Commissary Hub'}`;
+    }
+    window.addEventListener('load', () => {
+      loadSystemBranding();
+      loadCommissaryAnalytics();
+      loadDropdownOptions();
+    });
+  </script>
+
+  <footer class="app-footer">
+    <b>Programmed by Renz Aldrin Gomez, 2026</b> | KusinaERP Enterprise System
+  </footer>
+
+  <!-- Modal: Mobile Camera Barcode Scanner -->
+  <div id="barcode-scanner-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 450px; text-align: center;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+        <h3 style="margin: 0; color: #1e293b;">📷 Camera Barcode Scanner</h3>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeCameraBarcodeScanner()">✕ Isara</button>
+      </div>
+      <div id="barcode-reader-box" style="width: 100%; min-height: 250px; background: #000; border-radius: 0.5rem; overflow: hidden;"></div>
+      <small style="color: #64748b; display: block; margin-top: 0.5rem;">Itapat ang camera sa barcode sticker ng item o kahon.</small>
+    </div>
+  </div>
+
+
+  <!-- Modal: Printable Barcode Sticker Label -->
+  <div id="barcode-label-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 400px; text-align: center;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem;">
+        <h3 style="margin: 0; color: #1e293b;">🏷️ Barcode Product Label</h3>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeBarcodeLabelModal()">✕</button>
+      </div>
+      <div id="printable-sticker-area" style="padding: 1rem; border: 1.5px dashed #cbd5e1; border-radius: 0.5rem; background: #fff; margin-bottom: 1rem;">
+        <b id="sticker-item-name" style="font-size: 1.1rem; display: block; color: #1e293b;">BEEF TAPA</b>
+        <small id="sticker-item-codes" style="color: #64748b; display: block; margin-bottom: 0.5rem;">SAP: SAP-001 | POS: POS-101</small>
+        <svg id="barcode-svg" style="max-width: 100%; height: 70px;"></svg>
+        <div id="sticker-item-price" style="font-weight: 800; font-size: 1rem; color: #2563eb; margin-top: 0.25rem;">₱500.00 / BOX</div>
+      </div>
+      <button type="button" class="btn btn-success" style="width: 100%;" onclick="printBarcodeSticker()">🖨️ I-print ang Sticker (Thermal/Paper)</button>
+    </div>
+  </div>
+
+</body>
+</html>
