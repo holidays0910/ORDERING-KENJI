@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Commissary Portal - KusinaERP</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="#" class="brand">🍳 KusinaERP <span>Commissary Production & Dispatch</span></a>
+    <div class="user-info">
+      <span class="badge badge-commissary" id="user-display">Commissary Hub</span>
+      <button class="btn btn-secondary btn-sm" onclick="logoutUser()">Logout</button>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="card">
+      <div class="card-title">
+        <span>🏭 Live Inventory & Stock Monitoring</span>
+        <button class="btn btn-secondary btn-sm" onclick="printDeliveryReceiptA4()">🖨️ Print Dispatch DR (A4)</button>
+      </div>
+      
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>SAP Item</th>
+              <th>Current Stock</th>
+              <th>Buffer Limit</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="inventory-tbody">
+            <tr>
+              <td colspan="5" style="text-align: center; color: #94a3b8; padding: 1.5rem;">
+                Walang nakatalang stock sa database. Mag-upload ang Admin ng product masterlist.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span>🔍 Returns Inspection & Auto-DR Deduction</span>
+      </div>
+      <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">
+        Suriin ang mga ibinabang lata ng used oil at returned goods bago i-clear si driver.
+      </p>
+
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Branch Origin</th>
+              <th>Declared Item</th>
+              <th>Quantity / Weight</th>
+              <th>Driver / Plate</th>
+              <th>Inspect Condition</th>
+              <th>DR Action</th>
+            </tr>
+          </thead>
+          <tbody id="returns-tbody">
+            <tr>
+              <td colspan="6" style="text-align: center; color: #94a3b8; padding: 1.5rem;">
+                Walang nakabinbing returns manifest mula sa mga branch.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="firebase-config.js"></script>
+  <script src="auth.js"></script>
+  <script src="commissary.js"></script>
+  <script>
+    enforceRoleAccess(['commissary', 'admin']);
+    const u = getCurrentUser();
+    if (u) document.getElementById('user-display').innerText = `${u.branch || 'Commissary Hub'}`;
+  </script>
+</body>
+</html>

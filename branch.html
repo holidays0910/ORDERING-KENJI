@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Branch Portal - KusinaERP</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="#" class="brand">🍳 KusinaERP <span>Branch Operations</span></a>
+    <div class="user-info">
+      <span class="badge badge-branch" id="user-display">Branch Operations</span>
+      <button class="btn btn-secondary btn-sm" onclick="logoutUser()">Logout</button>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="card">
+      <div class="card-title">
+        <span>🛒 Place Order: Whole vs. Loose Breakdown</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+        <div class="form-group">
+          <label>Pangalan ng Item / Produkto</label>
+          <input type="text" id="order-product-name" placeholder="Hal: Beef Tapa o Mantika">
+        </div>
+        <div class="form-group">
+          <label>Whole Units (Box/Tin/Sack)</label>
+          <input type="number" id="order-whole" value="0" min="0">
+        </div>
+        <div class="form-group">
+          <label>Loose Units (Tingi/Pcs/Kg)</label>
+          <input type="number" id="order-loose" value="0" min="0">
+        </div>
+      </div>
+      <div style="margin-top: 0.5rem; text-align: right;">
+        <button class="btn btn-primary" onclick="submitBranchOrder()">Submit Order sa Commissary</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span>✍️ Electronic Proof of Delivery (e-POD) & Receiving</span>
+      </div>
+      <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 0.75rem;">
+        Pumirma sa touch screen at i-log ang receiving time gamit ang offline device timestamp.
+      </p>
+      
+      <div style="border: 2px dashed #cbd5e1; background: #fff; width: 100%; height: 160px; position: relative;">
+        <canvas id="sig-canvas" style="width: 100%; height: 100%; touch-action: none; cursor: crosshair;"></canvas>
+      </div>
+      
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.75rem;">
+        <button class="btn btn-secondary btn-sm" onclick="clearSignature()">Clear Signature</button>
+        <button class="btn btn-success" onclick="saveReceivingProof()">✅ Confirm Delivery & Save e-POD</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span>🔄 Returnables & Accountability Manifest (Basyo & Used Oil)</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
+        <div class="form-group">
+          <label>Item Return</label>
+          <input type="text" id="return-item-name" placeholder="Hal: 2 Tins Used Oil / Basyo">
+        </div>
+        <div class="form-group">
+          <label>Quantity / Dami</label>
+          <input type="text" id="return-qty" placeholder="Hal: 2 Tins">
+        </div>
+        <div class="form-group">
+          <label>Driver / Courier Plate</label>
+          <input type="text" id="return-courier" placeholder="Hal: Rodel / Plate 123">
+        </div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="submitReturnManifest()">Dispatch Returnables</button>
+    </div>
+  </div>
+
+  <script src="firebase-config.js"></script>
+  <script src="auth.js"></script>
+  <script src="branch.js"></script>
+  <script>
+    enforceRoleAccess(['branch', 'admin']);
+    const u = getCurrentUser();
+    if (u) document.getElementById('user-display').innerText = `Branch: ${u.branch || u.name}`;
+  </script>
+</body>
+</html>
