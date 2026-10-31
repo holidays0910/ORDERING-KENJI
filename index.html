@@ -1,0 +1,380 @@
+<!-- ==========================================================================
+     KUSINA ERP - ENTERPRISE AUTHENTICATION PORTAL (index.html)
+     DEVELOPER TUTORIAL & ARCHITECTURE:
+     - Authentication: Firebase Auth (Email/Password & Google Sign-In with fallback).
+     - RBAC Enforcement: Reads Firestore `users/{email}` for assigned role & status.
+     - Auto-Redirects: Routes authenticated active users to their role portal.
+     - Developer Credit: Programmed by Renz Aldrin Gomez, 2026.
+     ========================================================================== -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KusinaERP - Enterprise Login</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <!-- Firebase Compatibility SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script>
+    // Agarang pag-apply ng Company Name at Logo bago pa mag-load ang buong DOM
+    (function() {
+      const savedName = localStorage.getItem('kusina_brand_name');
+      const savedSub = localStorage.getItem('kusina_brand_subtitle');
+      const savedLogo = localStorage.getItem('kusina_brand_logo');
+      if (savedName) document.title = savedName + ' - Enterprise Login';
+      window.addEventListener('DOMContentLoaded', () => {
+        if (savedName) {
+          const t = document.getElementById('brand-header-title');
+          if (t) t.innerText = savedName;
+        }
+        if (savedSub) {
+          const s = document.getElementById('brand-header-subtitle');
+          if (s) s.innerText = savedSub;
+        }
+        if (savedLogo) {
+          const l = document.querySelector('.brand-logo-img');
+          const i = document.getElementById('default-brand-icon');
+          if (l) { l.src = savedLogo; l.style.display = 'inline-block'; }
+          if (i) { i.style.display = 'none'; }
+        }
+      });
+    })();
+  </script>
+</head>
+<body style="display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #0f172a;">
+
+  <div class="card" style="max-width: 440px; width: 100%; margin: 1rem; padding: 2rem;">
+    <div style="text-align: center; margin-bottom: 1.5rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;">
+      <!-- Dynamic Logo Image na ididisplay kung meron -->
+      <img class="brand-logo-img" style="max-height: 80px; display: none; object-fit: contain; margin-bottom: 8px;" alt="Company Logo" />
+      
+      <!-- Icon fallback kung walang logo -->
+      <div id="default-brand-icon" style="font-size: 2rem;">🍳</div>
+      
+      <h2 style="color: #1e293b; font-size: 1.6rem; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 8px;">
+        <span class="brand-header-title" id="brand-header-title">KusinaERP</span>
+      </h2>
+      <p style="color: #64748b; font-size: 0.85rem; font-weight: 500; max-width: 320px; margin: 0; line-height: 1.4;" class="brand-header-subtitle" id="brand-header-subtitle">
+        Secured Enterprise Portal (Firebase Auth & Firestore)
+      </p>
+    </div>
+
+    <!-- Alert / Status Banner -->
+    <div id="auth-status-msg" style="display: none; padding: 0.75rem; border-radius: 0.375rem; font-size: 0.85rem; margin-bottom: 1rem; line-height: 1.4;"></div>
+
+    <!-- Google Sign-In Button -->
+    <button type="button" id="btn-google-login" class="btn btn-google" style="width: 100%; margin-bottom: 1rem;" onclick="handleGoogleSignIn(event)">
+      <svg width="18" height="18" viewBox="0 0 18 18">
+        <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/>
+        <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/>
+        <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z"/>
+        <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/>
+      </svg>
+      Sign in with Google Account
+    </button>
+
+    <div class="divider">O GAMITIN ANG EMAIL AT PASSWORD</div>
+
+    <!-- Email/Password Section -->
+    <div id="login-section">
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="login-email" placeholder="user@company.com" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <button type="button" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;" onclick="handleEmailLogin(event)">Sign In with Email</button>
+      
+      <p style="text-align: center; margin-top: 1rem; font-size: 0.85rem; color: #64748b;">
+        Wala pang account? <a href="javascript:void(0)" style="color: #2563eb; font-weight: 600;" onclick="toggleAuthForm(true)">Mag-register dito</a>
+      </p>
+    </div>
+
+    <!-- Self-Registration Form: WALANG ROLE SELECTOR (Admin lang ang magbibigay ng role) -->
+    <div id="register-section" style="display: none;">
+      <div class="form-group">
+        <label>Buong Pangalan</label>
+        <input type="text" id="reg-name" placeholder="Juan Dela Cruz">
+      </div>
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="reg-email" placeholder="juan@company.com">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="reg-password" placeholder="••••••••">
+      </div>
+      <div class="form-group">
+        <label>Requested Station / Branch Location</label>
+        <input type="text" id="reg-station" placeholder="Hal: Branch ATC, Branch MOA, o Commissary">
+      </div>
+      <button type="button" class="btn btn-success" style="width: 100%; margin-top: 0.5rem;" onclick="handleRegister(event)">Submit Registration</button>
+      
+      <p style="text-align: center; margin-top: 1rem; font-size: 0.85rem; color: #64748b;">
+        May account na? <a href="javascript:void(0)" style="color: #2563eb; font-weight: 600;" onclick="toggleAuthForm(false)">Bumalik sa Login</a>
+      </p>
+    </div>
+  </div>
+
+  <script src="firebase-config.js"></script>
+  <script>
+    // Universal Auth helper fallback para sa seamless login
+    const AUTH_KEY = 'kusina_current_user';
+    window.setCurrentUser = window.setCurrentUser || function(user) {
+      localStorage.setItem(AUTH_KEY, JSON.stringify(user));
+    };
+    window.getCurrentUser = window.getCurrentUser || function() {
+      const data = localStorage.getItem(AUTH_KEY);
+      return data ? JSON.parse(data) : null;
+    };
+    window.redirectToRoleDashboard = window.redirectToRoleDashboard || function(role) {
+      const r = (role || '').toLowerCase().trim();
+      if (r.includes('admin') || r.includes('accounting') || r.includes('head')) {
+        window.location.href = 'admin.html';
+      } else if (r.includes('commi') || r.includes('kitchen') || r.includes('plant')) {
+        window.location.href = 'commissary.html';
+      } else {
+        window.location.href = 'branch.html';
+      }
+    };
+  </script>
+  <script src="app.js"></script>
+  <script>
+    function showStatus(msg, isError = true) {
+      const el = document.getElementById('auth-status-msg');
+      el.style.display = 'block';
+      el.style.background = isError ? '#fee2e2' : '#dcfce7';
+      el.style.color = isError ? '#991b1b' : '#166534';
+      el.style.border = isError ? '1px solid #f87171' : '1px solid #86efac';
+      el.innerHTML = msg;
+    }
+
+    window.addEventListener('load', async () => {
+      if (typeof loadSystemBranding === 'function') { loadSystemBranding(); }
+      if (auth && auth.getRedirectResult) {
+        try {
+          const result = await auth.getRedirectResult();
+          if (result && result.user) {
+            showStatus('Na-verify ang Google Account. Sinusuri ang role mula kay Admin...', false);
+            await processUserSession(result.user.email, result.user.displayName || result.user.email, true);
+          }
+        } catch (err) {
+          console.error('Redirect result error:', err);
+          showStatus('Error sa redirect login: ' + err.message, true);
+        }
+      }
+    });
+
+    function toggleAuthForm(showRegister) {
+      document.getElementById('login-section').style.display = showRegister ? 'none' : 'block';
+      document.getElementById('register-section').style.display = showRegister ? 'block' : 'none';
+      document.getElementById('auth-status-msg').style.display = 'none';
+    }
+
+    async function handleGoogleSignIn(event) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+
+      if (!auth || !googleProvider) {
+        showStatus('<b>Error:</b> Hindi ma-load ang Firebase SDKs.');
+        return;
+      }
+
+      showStatus('Binubuksan ang Google Sign-In...', false);
+
+      try {
+        const result = await auth.signInWithPopup(googleProvider);
+        if (result && result.user) {
+          showStatus('Tagumpay ang Google Sign-In! Kinukuha ang role mula kay Admin...', false);
+          await processUserSession(result.user.email, result.user.displayName || result.user.email, true);
+        }
+      } catch (err) {
+        console.error('Google Sign-In Error:', err);
+        if (err.code === 'auth/popup-blocked') {
+          showStatus('Naka-block ang pop-up window sa mobile. Lilipat sa redirect mode...');
+          await auth.signInWithRedirect(googleProvider);
+        } else if (err.code === 'auth/unauthorized-domain') {
+          const currentHost = window.location.hostname;
+          showStatus(`<b>Unauthorized Domain:</b> Pumunta sa Firebase Console &rarr; Authentication &rarr; Settings &rarr; Authorized domains at idagdag: <code>${currentHost}</code>`);
+        } else if (err.code === 'auth/cancelled-popup-request' || err.code === 'auth/popup-closed-by-user') {
+          showStatus('Isinara ang Google Sign-In window.');
+        } else {
+          showStatus('Error sa Google login: ' + err.message);
+        }
+      }
+    }
+
+    async function handleEmailLogin(event) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+
+      const email = document.getElementById('login-email').value.trim();
+      const pass = document.getElementById('login-password').value;
+
+      if (!email || !pass) {
+        showStatus('Mangyaring ilagay ang iyong email at password.');
+        return;
+      }
+
+      if (auth && auth.signInWithEmailAndPassword) {
+        showStatus('Sinusuri ang account...', false);
+        try {
+          const userCred = await auth.signInWithEmailAndPassword(email, pass);
+          await processUserSession(userCred.user.email, userCred.user.displayName || email, false);
+        } catch (err) {
+          showStatus('Login Failed: ' + err.message);
+        }
+      }
+    }
+
+    async function processUserSession(email, displayName, fromGoogle) {
+      if (!db) {
+        showStatus('Hindi makakonekta sa Firestore Database.');
+        return;
+      }
+
+      try {
+        const docRef = db.collection('users').doc(email.toLowerCase());
+        const docSnap = await docRef.get();
+
+        if (docSnap.exists) {
+          const userData = docSnap.data();
+
+          // 1. Suriin kung Active ang account (Si Admin lang ang makakapag-activate)
+          if (!userData.status || userData.status.toLowerCase() !== 'active') {
+            showStatus(`<b>Account Pending:</b> Ang iyong account (${email}) ay kasalukuyang <b>PENDING APPROVAL</b> pa.<br><br>Si <b>Head Office Admin</b> lamang ang may karapatang magbigay ng Role at mag-activate ng iyong access bago ka makapasok.`);
+            return;
+          }
+
+          // 2. KUNIN ANG EXACT ROLE NA INILAGAY NI ADMIN SA FIRESTORE
+          const assignedRole = (userData.role || 'branch').toLowerCase().trim();
+          const assignedBranch = userData.branch || userData.requestedStation || 'Branch Operations';
+
+          const activeUser = {
+            email: email,
+            name: userData.name || displayName,
+            role: assignedRole,
+            branch: assignedBranch,
+            status: 'active',
+            requiresPasswordSetup: fromGoogle && !userData.hasPasswordSet
+          };
+
+          setCurrentUser(activeUser);
+          showStatus(`<b>Na-verify!</b> Role: <b>${assignedRole.toUpperCase()}</b> (${assignedBranch}). Papasok sa portal...`, false);
+
+          setTimeout(() => {
+            redirectToRoleDashboard(assignedRole);
+          }, 800);
+
+        } else {
+          // Bago ang account. Hindi pwedeng pumili ng role ang user.
+          // Titingnan kung may umiiral nang Admin sa database
+          const adminCheck = await db.collection('users').where('role', '==', 'admin').limit(1).get();
+
+          if (adminCheck.empty) {
+            // Unang-unang user sa buong system = Siya ang Main Admin
+            await docRef.set({
+              email: email,
+              name: displayName,
+              role: 'admin',
+              status: 'active',
+              branch: 'Head Office',
+              hasPasswordSet: !fromGoogle,
+              createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            const firstUser = {
+              email: email,
+              name: displayName,
+              role: 'admin',
+              branch: 'Head Office',
+              status: 'active',
+              requiresPasswordSetup: fromGoogle
+            };
+            setCurrentUser(firstUser);
+            showStatus('<b>Maligayang Pagdating Master Admin!</b> Dahil ikaw ang unang account, ikaw ang ginawang Head Office Admin.', false);
+            setTimeout(() => {
+              redirectToRoleDashboard('admin');
+            }, 1000);
+          } else {
+            // Lahat ng sumunod na account (Branch/Commissary) = PENDING.
+            // Hinding-hindi sila magiging admin o makakapag-set ng role nila!
+            await docRef.set({
+              email: email,
+              name: displayName,
+              role: 'pending',
+              status: 'pending',
+              branch: 'Unassigned',
+              hasPasswordSet: !fromGoogle,
+              createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            showStatus(`<b>Rehistro Matagumpay!</b> Naitala ang iyong account bilang <b>PENDING</b>.<br><br>Mangyaring kontakin ang <b>Head Office Admin</b> para italaga ang iyong Role (Branch o Commissary) at i-activate ang iyong account.`);
+          }
+        }
+      } catch (err) {
+        console.error('Firestore Error:', err);
+        showStatus('Firestore Error: ' + err.message);
+      }
+    }
+
+    async function handleRegister(event) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+
+      const name = document.getElementById('reg-name').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const pass = document.getElementById('reg-password').value;
+      const station = document.getElementById('reg-station').value.trim();
+
+      if (!name || !email || !pass || !station) {
+        showStatus('Mangyaring punan ang lahat ng field.');
+        return;
+      }
+
+      if (auth && auth.createUserWithEmailAndPassword) {
+        try {
+          await auth.createUserWithEmailAndPassword(email, pass);
+          if (db) {
+            // Bawal mag-set ng role ang user: Awtomatikong 'pending' ang role at status
+            await db.collection('users').doc(email.toLowerCase()).set({
+              name: name,
+              email: email,
+              role: 'pending',
+              status: 'pending',
+              branch: station,
+              hasPasswordSet: true,
+              createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+          }
+          showStatus(`Narehistro na ang account! Hihintayin ang pagtatalaga ng Role at pag-apruba ni Head Office Admin bago makapasok (Status: PENDING).`, false);
+          toggleAuthForm(false);
+        } catch (err) {
+          showStatus('Registration Error: ' + err.message);
+        }
+      }
+    }
+  </script>
+
+  <div style="text-align: center; margin-top: 1rem;">
+      <button type="button" class="btn btn-secondary btn-sm" onclick="checkAndTriggerAppUpdate()" style="font-size: 0.75rem; color: #64748b;">
+        🔄 I-update ang App (Reload Latest)
+      </button>
+    </div>
+    <footer class="app-footer">
+    <b>Programmed by Renz Aldrin Gomez, 2026</b> | KusinaERP Enterprise System
+  </footer>
+
+</body>
+</html>
