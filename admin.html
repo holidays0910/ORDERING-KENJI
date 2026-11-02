@@ -1,0 +1,2371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Head Office - KusinaERP</title>
+  
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --secondary: #64748b;
+      --secondary-hover: #475569;
+      --success: #10b981;
+      --success-hover: #059669;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --warning: #f59e0b;
+      --warning-hover: #d97706;
+      
+      --bg-color: #f8fafc;
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      
+      --sidebar-bg: #ffffff;
+      --sidebar-width: 260px;
+      
+      --border-color: #e2e8f0;
+      --radius-sm: 0.375rem;
+      --radius-md: 0.75rem;
+      --radius-lg: 1rem;
+      
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      margin: 0;
+    }
+    
+    /* ---------------- Sidebar Navigation ---------------- */
+    .sidebar {
+      width: var(--sidebar-width);
+      min-width: var(--sidebar-width);
+      background-color: var(--sidebar-bg);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      z-index: 1000;
+      box-shadow: var(--shadow-sm);
+      transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      margin-left: 0;
+      height: 100%;
+    }
+
+    .sidebar.hidden {
+      margin-left: -260px;
+    }
+    
+    .sidebar-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    .sidebar-header:hover {
+      background: #f1f5f9;
+    }
+    
+    .brand-logo-img { max-height: 40px; max-width: 100px; object-fit: contain; }
+    .brand-text-box { display: flex; flex-direction: column; }
+    
+    #brand-header-title { font-size: 1.25rem; font-weight: 800; color: var(--primary); letter-spacing: -0.5px; }
+    #brand-header-subtitle { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
+    
+    .sidebar-menu { flex: 1; overflow-y: auto; padding: 1rem 0; }
+    .menu-category { font-size: 0.7rem; text-transform: uppercase; font-weight: 800; color: #94a3b8; letter-spacing: 0.5px; padding: 1rem 1.5rem 0.5rem 1.5rem; }
+    
+    .menu-item {
+      display: flex; align-items: center; padding: 0.75rem 1.5rem; color: var(--secondary);
+      text-decoration: none; font-size: 0.9rem; font-weight: 600; transition: all 0.2s ease; gap: 10px;
+    }
+    .menu-item:hover, .menu-item.active { background-color: #f1f5f9; color: var(--primary); border-right: 4px solid var(--primary); }
+    .menu-item i { font-size: 1.1rem; width: 24px; text-align: center; }
+    
+    .sidebar-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); background: #f8fafc; }
+    
+    .user-profile { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 0.5rem; border-radius: var(--radius-md); transition: background 0.2s; }
+    .user-profile:hover { background: #e2e8f0; }
+    
+    .user-avatar-initials {
+      width: 36px; height: 36px; border-radius: 50%; background: var(--primary); color: #fff;
+      font-weight: 700; display: flex; align-items: center; justify-content: center; font-size: 1rem;
+    }
+    .user-avatar-img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); }
+    .user-details { display: flex; flex-direction: column; }
+    .user-name { font-size: 0.85rem; font-weight: 700; color: var(--text-main); }
+    .user-role { font-size: 0.75rem; color: var(--text-muted); }
+    
+    /* ---------------- Main Layout Wrapper ---------------- */
+    .main-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      background: var(--bg-color);
+      width: 100%;
+      position: relative; /* Add this */
+    }
+    
+    .top-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1.5rem;
+      background: #fff;
+      border-bottom: 1px solid var(--border-color);
+      box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
+      z-index: 990;
+    }
+    
+    .hamburger-btn {
+      padding: 0.4rem 0.6rem; 
+      font-size: 1.2rem; 
+      border: none; 
+      background: transparent; 
+      box-shadow: none; 
+      color: #1e293b;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .hamburger-btn:hover { background: #f1f5f9; }
+
+    .main-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem;
+    }
+    
+    /* ---------------- Cards & Containers ---------------- */
+    .card { background: var(--card-bg); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); padding: 1.5rem; margin-bottom: 1.5rem; border: 1px solid rgba(226, 232, 240, 0.8); transition: box-shadow 0.3s ease; }
+    .card:hover { box-shadow: var(--shadow-md); }
+    .card-title { font-size: 1.25rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color); }
+    
+    /* ---------------- Buttons ---------------- */
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.6rem 1.2rem; font-size: 0.9rem; font-weight: 600; border-radius: var(--radius-md); border: none; cursor: pointer; transition: all 0.2s ease; font-family: inherit; }
+    .btn:active { transform: scale(0.97); }
+    .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
+    .btn-primary { background-color: var(--primary); color: white; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2); }
+    .btn-primary:hover { background-color: var(--primary-hover); box-shadow: 0 6px 8px -1px rgba(37, 99, 235, 0.3); }
+    .btn-secondary { background-color: #f1f5f9; color: var(--secondary-hover); border: 1px solid var(--border-color); }
+    .btn-secondary:hover { background-color: #e2e8f0; color: var(--text-main); }
+    .btn-success { background-color: var(--success); color: white; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2); }
+    .btn-success:hover { background-color: var(--success-hover); }
+    .btn-danger { background-color: var(--danger); color: white; box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2); }
+    .btn-danger:hover { background-color: var(--danger-hover); }
+    .btn-warning { background-color: var(--warning); color: white; box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.2); }
+    .btn-warning:hover { background-color: var(--warning-hover); }
+    
+    /* ---------------- Forms & Inputs ---------------- */
+    .form-group { margin-bottom: 1.25rem; }
+    label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.4rem; }
+    input[type="text"], input[type="number"], input[type="email"], input[type="password"], input[type="date"], select { width: 100%; padding: 0.6rem 0.8rem; font-size: 0.95rem; font-family: inherit; border: 1px solid #cbd5e1; border-radius: var(--radius-sm); background-color: #fff; color: var(--text-main); transition: all 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+    input:disabled, select:disabled { background-color: #f1f5f9; color: #94a3b8; cursor: not-allowed; }
+    
+    /* ---------------- Tables ---------------- */
+    .table-responsive { overflow-x: auto; border-radius: var(--radius-md); border: 1px solid var(--border-color); }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
+    th { background-color: #f8fafc; padding: 1rem; font-weight: 700; color: var(--secondary-hover); border-bottom: 2px solid var(--border-color); white-space: nowrap; }
+    td { padding: 1rem; border-bottom: 1px solid var(--border-color); vertical-align: middle; color: var(--text-main); }
+    tbody tr { transition: background-color 0.15s; }
+    tbody tr:hover { background-color: #f1f5f9; }
+    
+    /* ---------------- Badges ---------------- */
+    .badge { display: inline-flex; align-items: center; padding: 0.25rem 0.6rem; font-size: 0.75rem; font-weight: 700; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .badge-admin { background: #dbeafe; color: #1e40af; }
+    .badge-branch { background: #dcfce7; color: #166534; }
+    .badge-commissary { background: #fef3c7; color: #92400e; }
+    .badge-warning { background: #ffedd5; color: #9a3412; }
+    .badge-danger { background: #fee2e2; color: #991b1b; }
+    .badge-secondary { background: #f1f5f9; color: #475569; }
+    
+    /* ---------------- Modals ---------------- */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; animation: fadeIn 0.2s forwards; }
+    .modal-content { background: #fff; border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); padding: 1.5rem; max-width: 90%; max-height: 90vh; overflow-y: auto; transform: scale(0.95); animation: scaleUp 0.2s forwards; }
+    @keyframes fadeIn { to { opacity: 1; } }
+    @keyframes scaleUp { to { transform: scale(1); } }
+    
+    /* ---------------- Toast Notifications ---------------- */
+    #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; }
+    .toast { background: #ffffff; border-left: 5px solid var(--primary); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15); padding: 1rem 1.5rem; border-radius: var(--radius-md); display: flex; align-items: center; gap: 12px; transform: translateX(120%); transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
+    .toast.show { transform: translateX(0); }
+    .toast-success { border-color: var(--success); }
+    .toast-error { border-color: var(--danger); }
+    .toast-warning { border-color: var(--warning); }
+    .toast-icon { font-size: 1.5rem; }
+    .toast-success .toast-icon { color: var(--success); }
+    .toast-error .toast-icon { color: var(--danger); }
+    .toast-content { display: flex; flex-direction: column; }
+    .toast-title { font-weight: 700; font-size: 0.95rem; color: var(--text-main); }
+    .toast-message { font-size: 0.85rem; color: var(--text-muted); margin-top: 2px; }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .sidebar { 
+        position: fixed; 
+        height: 100%; 
+        left: -260px; /* Use left instead of margin-left for better absolute positioning */
+        top: 0; 
+        margin-left: 0; /* Reset margin */
+        z-index: 1001; 
+        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .sidebar.mobile-open { 
+        left: 0; 
+        box-shadow: 4px 0 20px rgba(0,0,0,0.3); 
+      }
+      
+      /* HUWAG I-PUSH ANG MAIN CONTENT SA MOBILE, OVERLAY LANG DAPAT */
+      .main-wrapper { 
+        transition: none !important; /* Disable transition on main wrapper for mobile */
+        margin-left: 0 !important; 
+        width: 100vw !important; /* Ensure it takes full viewport width */
+        position: relative;
+      }
+      
+      /* DARK BACKDROP OVERLAY KAPAG BUKAS ANG MENU SA MOBILE */
+      body.menu-open::after {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(15, 23, 42, 0.6);
+        z-index: 1000;
+        backdrop-filter: blur(2px);
+      }
+      body.menu-open { overflow: hidden; }
+    }
+  </style>
+
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+</head>
+<body>
+  
+  >
+  <aside class="sidebar" id="app-sidebar">
+    <div class="sidebar-header" onclick="toggleSidebar()" title="I-click para itago ang menu">
+      <img class="brand-logo-img" style="display: none;" alt="Logo" />
+      <span class="default-brand-icon" style="font-size: 1.6rem;">🍳</span>
+      <div class="brand-text-box">
+        <span id="brand-header-title">KusinaERP</span>
+        <span id="brand-header-subtitle">Head Office</span>
+      </div>
+    </div>
+    
+    <nav class="sidebar-menu">
+      <div class="menu-category">Overview</div>
+      <a href="javascript:void(0)" onclick="switchAdminView('dashboard'); setActiveMenu(this)" class="menu-item active">
+        <i>📊</i> Dashboard
+      </a>
+      
+      <div class="menu-category">Operations</div>
+      <a href="javascript:void(0)" onclick="switchAdminView('products'); setActiveMenu(this)" class="menu-item">
+        <i>📦</i> Products Master
+      </a>
+      <a href="javascript:void(0)" onclick="switchAdminView('manufacturing'); setActiveMenu(this)" class="menu-item">
+        <i>🏭</i> Manufacturing
+      </a>
+      <a href="javascript:void(0)" onclick="switchAdminView('costing'); setActiveMenu(this)" class="menu-item">
+        <i>📈</i> Recipe Costing
+      </a>
+      
+      <div class="menu-category">Procurement & AP</div>
+      <a href="javascript:void(0)" onclick="switchAdminView('purchase_orders'); setActiveMenu(this)" class="menu-item">
+        <i>📝</i> Purchase Orders
+      </a>
+      <a href="javascript:void(0)" onclick="switchAdminView('ap_invoices'); setActiveMenu(this)" class="menu-item">
+        <i>🧾</i> A/P Invoices
+      </a>
+      <a href="javascript:void(0)" onclick="switchAdminView('vendors'); setActiveMenu(this)" class="menu-item">
+        <i>🏢</i> Vendors
+      </a>
+      
+      <div class="menu-category">Logistics & Branches</div>
+      <a href="javascript:void(0)" onclick="switchAdminView('disputes'); setActiveMenu(this)" class="menu-item">
+        <i>🚨</i> Branch Disputes
+      </a>
+      <a href="javascript:void(0)" onclick="switchAdminView('customers'); setActiveMenu(this)" class="menu-item">
+        <i>👥</i> Customers
+      </a>
+      <a href="javascript:void(0)" onclick="switchAdminView('stations'); setActiveMenu(this)" class="menu-item">
+        <i>🏷️</i> Storage Stations
+      </a>
+      
+      <div class="menu-category">Human Resources</div>
+      <a href="javascript:void(0)" onclick="switchAdminView('employees'); setActiveMenu(this)" class="menu-item">
+        <i>🧑‍💼</i> Employee DB
+      </a>
+      <a href="javascript:void(0)" onclick="switchAdminView('payroll'); setActiveMenu(this)" class="menu-item">
+        <i>💸</i> Payroll / Payslip
+      </a>
+      <a href="javascript:void(0)" onclick="switchAdminView('team'); setActiveMenu(this)" class="menu-item">
+        <i>🚚</i> Logistics Team
+      </a>
+      
+      <div class="menu-category">Finance & System</div>
+      <a href="javascript:void(0)" onclick="switchAdminView('finance'); setActiveMenu(this)" class="menu-item">
+        <i>🏦</i> General Ledger
+      </a>
+      <a href="javascript:void(0)" onclick="switchAdminView('users'); setActiveMenu(this)" class="menu-item">
+        <i>🛡️</i> User Access
+      </a>
+      <a href="javascript:void(0)" onclick="switchAdminView('branding'); setActiveMenu(this)" class="menu-item">
+        <i>🏢</i> Branding Setup
+      </a>
+      <a href="javascript:void(0)" onclick="switchAdminView('logs'); setActiveMenu(this)" class="menu-item">
+        <i>🕵️</i> Audit Logs
+      </a>
+      <a href="javascript:void(0)" onclick="switchAdminView('backups'); setActiveMenu(this)" class="menu-item">
+        <i>💾</i> Data Backups
+      </a>
+    </nav>
+    
+    <div class="sidebar-footer">
+      <div class="user-profile" onclick="openAdminProfileModal()">
+        <img class="user-avatar-img" style="display: none;" />
+        <div class="user-avatar-initials">A</div>
+        <div class="user-details">
+          <span class="user-name" id="user-display">Admin</span>
+          <span class="user-role">Head Office</span>
+        </div>
+      </div>
+      <button class="btn btn-secondary" style="width: 100%; margin-top: 10px; font-size: 0.8rem;" onclick="logoutUser()">🚪 Logout</button>
+    </div>
+  </aside>
+  
+  <!-- Toast Container -->
+  <div id="toast-container"></div>
+  
+  <script>
+    function setActiveMenu(element) {
+      document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+      element.classList.add('active');
+      if(window.innerWidth <= 1024) {
+        document.getElementById('app-sidebar').classList.remove('open');
+      }
+    }
+  </script>
+
+
+  
+  <!-- Main Wrapper -->
+  <div class="main-wrapper">
+    <header class="top-header">
+      <div style="display: flex; align-items: center; gap: 15px;">
+        <button class="hamburger-btn" onclick="toggleSidebar()">☰</button>
+        <b style="color: #1e293b; font-size: 1.1rem; letter-spacing: -0.5px;">KusinaERP <span style="color: #2563eb;">Admin</span></b>
+      </div>
+      <div class="user-profile-top" onclick="openAdminProfileModal()" style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 4px 8px; border-radius: 8px; transition: background 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+         <span style="font-weight: 600; font-size: 0.85rem; color: #475569;" id="top-user-display">Account</span>
+         <div class="user-avatar-initials" style="width: 32px; height: 32px; font-size: 0.85rem;">A</div>
+         <img class="user-avatar-img" style="display: none; width: 32px; height: 32px;" />
+      </div>
+    </header>
+
+    <main class="main-content">
+    
+    <!-- ========================================================
+         VIEW 1: EXECUTIVE ANALYTICS DASHBOARD (Main Landing View)
+         ======================================================== -->
+    <div id="view-admin-dashboard" class="admin-view-section">
+      <div class="card" id="analytics-section">
+        <div class="card-title">
+          <span>📊 Executive Analytics & Branch Demand Insights</span>
+          <button class="btn btn-primary btn-sm" onclick="loadAdminAnalytics()">🔄 Refresh Analytics</button>
+        </div>
+        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1.25rem;">
+          Real-time analytics batay sa mga aktwal na orders mula sa mga branch sa Firestore database.
+        </p>
+
+        <!-- KPI Summary Cards -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+          <div style="background: #f8fafc; border-left: 4px solid #2563eb; padding: 1rem; border-radius: 0.375rem;">
+            <div style="font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 700;">Kabuuang Na-order (Total Orders)</div>
+            <div style="font-size: 1.6rem; font-weight: 800; color: #1e293b; margin-top: 0.25rem;" id="kpi-total-orders">0</div>
+          </div>
+          <div style="background: #f8fafc; border-left: 4px solid #10b981; padding: 1rem; border-radius: 0.375rem;">
+            <div style="font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 700;">Kabuuang Halaga (Total Spend)</div>
+            <div style="font-size: 1.6rem; font-weight: 800; color: #10b981; margin-top: 0.25rem;" id="kpi-total-spend">₱0.00</div>
+          </div>
+          <div style="background: #f8fafc; border-left: 4px solid #f59e0b; padding: 1rem; border-radius: 0.375rem;">
+            <div style="font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 700;">Aktibong Branches</div>
+            <div style="font-size: 1.6rem; font-weight: 800; color: #1e293b; margin-top: 0.25rem;" id="kpi-active-branches">0</div>
+          </div>
+          <div style="background: #f8fafc; border-left: 4px solid #8b5cf6; padding: 1rem; border-radius: 0.375rem;">
+            <div style="font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 700;">Pinakamalakas na Station</div>
+            <div style="font-size: 1.1rem; font-weight: 800; color: #1e293b; margin-top: 0.5rem;" id="kpi-top-station">--</div>
+          </div>
+        </div>
+
+        <!-- No Data Placeholder -->
+        <div id="analytics-no-data" style="display: none; padding: 2rem; text-align: center; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 0.5rem; margin-bottom: 1rem;">
+          <div style="font-size: 2rem; margin-bottom: 0.5rem;">📉</div>
+          <b style="color: #475569;">Wala pang order data sa database.</b>
+        </div>
+
+        <!-- Charts Grid -->
+        <div id="analytics-charts-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.5rem;">
+          <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 1rem;">
+            <b style="font-size: 0.95rem; color: #1e293b; display: block; margin-bottom: 0.5rem;">🏢 Top Branches with Highest Spend (₱)</b>
+            <div style="position: relative; height: 260px;">
+              <canvas id="chart-branch-spend"></canvas>
+            </div>
+          </div>
+
+          <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 1rem;">
+            <b style="font-size: 0.95rem; color: #1e293b; display: block; margin-bottom: 0.5rem;">🍗 Top 5 Most Ordered Products</b>
+            <div style="position: relative; height: 260px;">
+              <canvas id="chart-top-products"></canvas>
+            </div>
+          </div>
+
+          <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 1rem;">
+            <b style="font-size: 0.95rem; color: #1e293b; display: block; margin-bottom: 0.5rem;">📍 Station Workload & Demand Distribution</b>
+            <div style="position: relative; height: 260px;">
+              <canvas id="chart-station-demand"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================
+         VIEW 2: BRANDING & WHITE-LABEL HEADER SETTINGS
+         ======================================================== -->
+    <div id="view-admin-branding" class="admin-view-section" style="display: none;">
+      <div class="card" id="system-branding-card">
+        <div class="card-title">
+          <span>🏢 System Branding & Company Header Settings (White-Label)</span>
+          <button class="btn btn-secondary btn-sm" onclick="loadSystemBranding()">🔄 Refresh</button>
+        </div>
+        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">
+          Palitan ang pangalan ng ERP header upang maging angkop sa kumpanya o brand name ng restaurant. Si Admin lamang ang makakapagbago nito.
+        </p>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; align-items: flex-end;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label>Pangalan ng System / Brand Header:</label>
+            <input type="text" id="setting-brand-name" placeholder="Hal: KusinaERP, Kenji Food Hub, atbp." style="font-weight: 700;">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label>Tagline / Subtitle ng Header:</label>
+            <input type="text" id="setting-brand-subtitle" placeholder="Hal: Head Office / Accounting, Central Commissary">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label>TIN Number (VAT / Non-VAT):</label>
+            <input type="text" id="setting-brand-tin" placeholder="Hal: 123-456-789-00000">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label>Company Registered Address (Head Office / Plant):</label>
+            <input type="text" id="setting-brand-address" placeholder="Hal: 123 Sucat Road, Parañaque City, Metro Manila">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label>Telephone / Contact Numbers:</label>
+            <input type="text" id="setting-brand-contact" placeholder="Hal: (02) 8123-4567 / 0917-123-4567">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label>Company Logo (Icon or PNG logo):</label>
+            <div style="display: flex; align-items: center; gap: 15px; margin-top: 5px;">
+              <input type="file" id="setting-brand-logo" accept="image/*" style="padding: 5px;" onchange="previewSelectedLogo(event)">
+              <img id="setting-brand-logo-preview" class="brand-logo-img" style="max-height: 50px; display: none; border-radius: 4px; border: 1px solid #ccc; padding: 2px; background: #fff;" />
+            </div>
+          </div>
+          
+          <!-- PO Official Signatories Setup -->
+          <div class="form-group" style="margin-bottom: 0; background: #eff6ff; border: 1px solid #bfdbfe; padding: 0.75rem; border-radius: 0.375rem;">
+            <label style="color: #1e40af; font-weight: 700;">✍️ Verified & Checked By (Supply Chain / Commissary Head):</label>
+            <input type="text" id="setting-brand-po-checker" placeholder="Pangalan ng Supply Chain Head (Hal: Engr. Mark Santos)" style="font-weight: 600; margin-top: 3px;">
+            <input type="text" id="setting-brand-po-checker-title" placeholder="Opisyal na Titulo (Default: Commissary / Supply Chain Head)" style="font-size: 0.8rem; margin-top: 4px;">
+          </div>
+          <div class="form-group" style="margin-bottom: 0; background: #fef2f2; border: 1px solid #fecaca; padding: 0.75rem; border-radius: 0.375rem;">
+            <label style="color: #991b1b; font-weight: 700;">✍️ Approved By (COO / President):</label>
+            <input type="text" id="setting-brand-po-approver" placeholder="Pangalan ng COO / President (Hal: Maria Clara Gomez)" style="font-weight: 600; margin-top: 3px;">
+            <input type="text" id="setting-brand-po-approver-title" placeholder="Opisyal na Titulo (Default: Chief Operating Officer (COO) / President)" style="font-size: 0.8rem; margin-top: 4px;">
+          </div>
+
+          <script>
+            function previewSelectedLogo(event) {
+              const file = event.target.files[0];
+              if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                  const preview = document.getElementById('setting-brand-logo-preview');
+                  if (preview) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'inline-block';
+                  }
+                  alert('📷 Napili na ang larawan: ' + file.name + '\nPindutin ang "💾 I-save ang Bagong Header" upang mai-upload ito sa system.');
+                };
+                reader.readAsDataURL(file);
+              }
+            }
+          </script>
+          <div>
+            <button type="button" class="btn btn-primary" onclick="saveSystemBranding()">💾 I-save ang Bagong Header & Signatories</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================
+         VIEW 3: USER ROLES & ACCOUNT PERMISSIONS
+         ======================================================== -->
+    <div id="view-admin-users" class="admin-view-section" style="display: none;">
+      <div class="card">
+        <div class="card-title">
+          <span>👥 User Role Management (Firestore Database)</span>
+          <button class="btn btn-primary btn-sm" onclick="loadFirestoreUsers()">🔄 Refresh List</button>
+        </div>
+        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">
+          Dito lalabas ang mga staff na nag-sign up o nag-login. Si Admin lamang ang magtatalaga ng Role (Branch, Commissary, o Admin) at Status (Active/Disabled).
+        </p>
+        <div style="margin-bottom: 1rem;">
+            <input type="text" id="admin-user-search" placeholder="🔎 Mag-search ng Account gamit ang Pangalan, Email, o Branch Outlet..." oninput="filterAdminUsersTable()" style="font-size: 0.9rem;">
+          </div>
+          <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Pangalan at Email</th>
+                <th>Assigned Station / Outlet</th>
+                <th>Assigned Role</th>
+                <th>Account Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="user-approval-table">
+              <tr>
+                <td colspan="5" style="text-align: center; color: #94a3b8; padding: 1.5rem;">
+                  Walang nakitang user sa database.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    
+
+    <!-- ========================================================
+         VIEW: EMPLOYEE DB (HRM)
+         ======================================================== -->
+    <div id="view-admin-employees" class="admin-view-section" style="display: none;">
+      <div class="card">
+        <div class="card-title">
+          <span style="color: #2563eb;">🧑‍💼 Employee DB (HR Masterlist)</span>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button class="btn btn-success btn-sm" onclick="openEmployeeModal()">➕ Add Employee</button>
+            <button class="btn btn-primary btn-sm" onclick="exportEmployeesCSV()">📥 Export CSV</button>
+            <button class="btn btn-secondary btn-sm" onclick="printEmployeesReport()">🖨️ Print Masterlist</button>
+            <button class="btn btn-secondary btn-sm" onclick="loadAdminEmployees()">🔄 Refresh</button>
+          </div>
+        </div>
+        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">
+          Listahan ng mga tauhan. Dito nakatago ang Employee 201 Files at Basic Salary information para sa Payroll.
+        </p>
+        <div style="margin-bottom: 1rem;">
+          <input type="text" id="admin-employee-search" placeholder="🔎 Mag-search ng Pangalan o Position..." oninput="filterAdminEmployees()" style="font-size: 0.9rem;">
+        </div>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Employee ID</th>
+                <th>Buong Pangalan</th>
+                <th>Position & Dept.</th>
+                <th>Base Salary (₱)</th>
+                <th>Status</th>
+                <th>Aksyon</th>
+              </tr>
+            </thead>
+            <tbody id="admin-employees-tbody">
+              <tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 1.5rem;">Kinukuha ang records...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================
+         VIEW: PAYROLL DB & PAY ITEMS
+         ======================================================== -->
+    <div id="view-admin-payroll" class="admin-view-section" style="display: none;">
+      <div class="card">
+        <div class="card-title">
+          <span style="color: #059669;">💸 Payroll DB & Pay Items</span>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-success btn-sm" onclick="openPayrollModal()">➕ Generate Payslip</button>
+            <button class="btn btn-secondary btn-sm" onclick="loadAdminPayroll()">🔄 Refresh</button>
+          </div>
+        </div>
+        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">
+          Talaan ng mga pasweldo. Awtomatikong ibabawas ang total payroll payout sa Cash on Hand sa General Ledger.
+        </p>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Date / Period</th>
+                <th>Employee Name</th>
+                <th>Gross Pay</th>
+                <th>Deductions (Vale/Gov)</th>
+                <th>Net Pay</th>
+                <th>Status</th>
+                <th>Aksyon</th>
+              </tr>
+            </thead>
+            <tbody id="admin-payroll-tbody">
+              <tr><td colspan="7" style="text-align: center; color: #94a3b8; padding: 1.5rem;">Kinukuha ang payroll records...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================
+         VIEW: FINANCE & GENERAL LEDGER
+         ======================================================== -->
+    <div id="view-admin-finance" class="admin-view-section" style="display: none;">
+      <div class="card">
+        <div class="card-title">
+          <span style="color: #047857;">🏦 Finance Dashboard (GL, A/P, A/R)</span>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-primary btn-sm" onclick="setBeginningBalances()">💰 Set Balance</button>
+            <button class="btn btn-danger btn-sm" onclick="resetLedgerZReading()">🧾 Z-Reading (Reset)</button>
+            <button class="btn btn-secondary btn-sm" onclick="loadAdminFinance()">🔄 Sync</button>
+          </div>
+        </div>
+        
+        <!-- GL KPIs -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+          <div style="background: #f0fdf4; border: 1px solid #86efac; padding: 1rem; border-radius: 0.375rem;">
+            <div style="font-size: 0.8rem; color: #166534; font-weight: 700; text-transform: uppercase;">Cash on Hand</div>
+            <div style="font-size: 1.6rem; font-weight: 900; color: #15803d;" id="gl-cash-balance">₱0.00</div>
+          </div>
+          <div style="background: #eff6ff; border: 1px solid #93c5fd; padding: 1rem; border-radius: 0.375rem;">
+            <div style="font-size: 0.8rem; color: #1e40af; font-weight: 700; text-transform: uppercase;">Bank Balance</div>
+            <div style="font-size: 1.6rem; font-weight: 900; color: #1d4ed8;" id="gl-bank-balance">₱0.00</div>
+          </div>
+          <div style="background: #fef2f2; border: 1px solid #fca5a5; padding: 1rem; border-radius: 0.375rem;">
+            <div style="font-size: 0.8rem; color: #991b1b; font-weight: 700; text-transform: uppercase;">Accounts Payable (Utang sa Vendor)</div>
+            <div style="font-size: 1.6rem; font-weight: 900; color: #b91c1c;" id="gl-total-ap">₱0.00</div>
+          </div>
+          <div style="background: #fffbeb; border: 1px solid #fde047; padding: 1rem; border-radius: 0.375rem;">
+            <div style="font-size: 0.8rem; color: #854d0e; font-weight: 700; text-transform: uppercase;">Accounts Receivable (Pautang)</div>
+            <div style="font-size: 1.6rem; font-weight: 900; color: #a16207;" id="gl-total-ar">₱0.00</div>
+          </div>
+        </div>
+        
+        <!-- General Ledger Log -->
+        <b style="color: #1e293b; margin-bottom: 0.5rem; display: block;">📜 General Ledger Transactions</b>
+        <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+          <table>
+            <thead>
+              <tr style="background: #f1f5f9; font-size: 0.85rem;">
+                <th>Timestamp</th>
+                <th>Transaction Type</th>
+                <th>Reference</th>
+                <th>In (Debit)</th>
+                <th>Out (Credit)</th>
+              </tr>
+            </thead>
+            <tbody id="gl-transactions-tbody">
+               <tr><td colspan="5" style="text-align: center; color: #94a3b8; padding: 1rem;">Walang transactions.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ========================================================
+         VIEW: VENDOR MANAGEMENT
+         ======================================================== -->
+    <div id="view-admin-vendors" class="admin-view-section" style="display: none;">
+      <div class="card">
+        <div class="card-title">
+          <span style="color: #1e293b;">🏢 Vendor / Supplier Management</span>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button class="btn btn-success btn-sm" onclick="openVendorModal()">➕ Add Vendor</button>
+            <button class="btn btn-primary btn-sm" onclick="exportVendorsCSV()">📥 Export CSV</button>
+            <button class="btn btn-secondary btn-sm" onclick="printVendorsReport()">🖨️ Print List</button>
+            <button class="btn btn-secondary btn-sm" onclick="loadAdminVendors()">🔄 Refresh</button>
+          </div>
+        </div>
+        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">
+          Pamahalaan ang listahan ng mga nagsu-supply sa kumpanya para magamit sa Product Management at Purchase Orders (PO).
+        </p>
+        <div style="margin-bottom: 1rem;">
+          <input type="text" id="admin-vendor-search" placeholder="🔎 Mag-search ng Vendor..." oninput="filterAdminVendors()" style="font-size: 0.9rem;">
+        </div>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Vendor Name</th>
+                <th>Contact Person</th>
+                <th>Contact No. & Email</th>
+                <th>Address</th>
+                <th>Terms</th>
+                <th>Aksyon</th>
+              </tr>
+            </thead>
+            <tbody id="admin-vendors-tbody">
+              <tr>
+                <td colspan="6" style="text-align: center; color: #94a3b8; padding: 1.5rem;">Kinukuha ang vendor records...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================
+         VIEW: CUSTOMER MANAGEMENT
+         ======================================================== -->
+    <div id="view-admin-customers" class="admin-view-section" style="display: none;">
+      <div class="card">
+        <div class="card-title">
+          <span style="color: #1e293b;">👥 Customer Management</span>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button class="btn btn-success btn-sm" onclick="openCustomerModal()">➕ Add Customer</button>
+            <button class="btn btn-primary btn-sm" onclick="exportCustomersCSV()">📥 Export CSV</button>
+            <button class="btn btn-secondary btn-sm" onclick="printCustomersReport()">🖨️ Print List</button>
+            <button class="btn btn-secondary btn-sm" onclick="loadAdminCustomers()">🔄 Refresh</button>
+          </div>
+        </div>
+        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">
+          Mga rehistradong customer ng kumpanya (Wholesale, Retail, Subdivision Resellers) para sa Agent Ordering.
+        </p>
+        <div style="margin-bottom: 1rem;">
+          <input type="text" id="admin-customer-search" placeholder="🔎 Mag-search ng Customer Name..." oninput="filterAdminCustomers()" style="font-size: 0.9rem;">
+        </div>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Customer Name</th>
+                <th>Address</th>
+                <th>Contact No. / Email</th>
+                <th>Bank Acc / Details</th>
+                <th>Customer Type</th>
+                <th>Aksyon</th>
+              </tr>
+            </thead>
+            <tbody id="admin-customers-tbody">
+              <tr>
+                <td colspan="6" style="text-align: center; color: #94a3b8; padding: 1.5rem;">Kinukuha ang customer records...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================
+         VIEW 4: PRODUCT MASTER & LIVE PRICING EDITOR
+         ======================================================== -->
+    <div id="view-admin-products" class="admin-view-section" style="display: none;">
+      <div class="card">
+        <div class="card-title">
+          <span>📦 Product Masterlist & Live Pricing Editor (Admin Control)</span>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button class="btn btn-primary btn-sm" onclick="exportCommissaryProductsCSV()">📥 Extract Product List (CSV)</button>
+            <button class="btn btn-success btn-sm" onclick="openAdminProductModal()">➕ Mag-add ng Produkto</button>
+            <button class="btn btn-secondary btn-sm" onclick="downloadCSVTemplate()">📄 Blank Template</button>
+            <button class="btn btn-secondary btn-sm" onclick="loadAdminProducts()">🔄 Refresh</button>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap;">
+            <input type="text" id="admin-product-search" placeholder="🔎 Mag-search ng Produkto (hal: Beef Tapa, POS-101, SAP-001, o Barcode)..." oninput="filterAdminProductsTable()" style="flex: 1; font-size: 0.9rem;">
+            <button type="button" class="btn btn-primary" onclick="openCameraBarcodeScanner('admin')">📷 Scan Barcode</button>
+          </div>
+          <div style="display: flex; gap: 1rem; align-items: flex-end; background: #f8fafc; padding: 0.75rem 1rem; border-radius: 0.375rem; border: 1px solid #e2e8f0; margin-bottom: 1.25rem; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 240px;">
+            <label style="margin-bottom: 0.25rem;">Bulk Upload mula sa SAP / Excel (.CSV)</label>
+            <input type="file" id="csv-file-input" accept=".csv" style="font-size: 0.85rem; padding: 0.35rem 0.5rem;">
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="processCSVUpload()">Upload & Sync</button>
+        </div>
+
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>POS Code</th>
+                <th>SAP / Sub Code</th>
+                <th>Barcode</th>
+                <th>Pangalan ng Produkto</th>
+                <th>Commissary Hub</th>
+                <th>Storage Station</th>
+                <th>Whole Rate & UOM</th>
+                <th>Loose Rate & UOM</th>
+                <th>Expiration Date</th>
+                <th>Packaging Guide</th>
+                <th style="width: 140px; text-align: center;">Aksyon</th>
+              </tr>
+            </thead>
+            <tbody id="admin-products-tbody">
+              <tr>
+                <td colspan="10" style="text-align: center; color: #94a3b8; padding: 1.5rem;">
+                  Kinukuha ang Product Master mula sa Firestore...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    
+    <!-- ========================================================
+         VIEW: MANUFACTURING (BOM) & WORK ORDERS
+         ======================================================== -->
+    <div id="view-admin-manufacturing" class="admin-view-section" style="display: none;">
+      <div class="card">
+        <div class="card-title">
+          <span style="color: #0284c7;">🏭 Manufacturing & Bill of Materials (BOM)</span>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-primary btn-sm" onclick="openWorkOrderModal()">➕ Start Production</button>
+            <button class="btn btn-success btn-sm" onclick="openRecipeBuilderModal()">➕ Add Recipe (BOM)</button>
+            <button class="btn btn-secondary btn-sm" onclick="loadManufacturing()">🔄 Refresh</button>
+          </div>
+        </div>
+        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">
+          Dito nag-coconvert ang mga Raw Materials (Harina, Baboy) papunta sa Finished Goods (Ramen, Siomai) gamit ang naka-set na Recipe/BOM.
+        </p>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Finished Good (Output)</th>
+                <th>Recipe / Raw Materials Needed</th>
+                <th>Yield Qty</th>
+                <th>Status</th>
+                <th>Aksyon</th>
+              </tr>
+            </thead>
+            <tbody id="admin-mfg-tbody">
+              <tr><td colspan="5" style="text-align: center; color: #94a3b8; padding: 1.5rem;">Wala pang naka-set na Bill of Materials.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================
+         VIEW: RECIPE COSTING & LIVE COGS
+         ======================================================== -->
+    <div id="view-admin-costing" class="admin-view-section" style="display: none;">
+      <div class="card">
+        <div class="card-title">
+          <span style="color: #b91c1c;">📊 Recipe Costing & Live COGS</span>
+          <button class="btn btn-secondary btn-sm" onclick="loadCosting()">🔄 Recalculate Costs</button>
+        </div>
+        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">
+          Awtomatikong kino-compute ang aktwal na puhunan ng bawat Finished Good base sa pinakabagong presyo ng Raw Materials mula sa AP Invoices.
+        </p>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Product Name</th>
+                <th>Selling Price</th>
+                <th>Total Raw Material Cost (COGS)</th>
+                <th>Gross Margin (%)</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="admin-costing-tbody">
+              <tr><td colspan="5" style="text-align: center; color: #94a3b8; padding: 1.5rem;">Walang data para sa costing. I-setup muna ang BOM.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================
+         VIEW: LOT TRACING & FEFO
+         ======================================================== -->
+    <div id="view-admin-lot_tracing" class="admin-view-section" style="display: none;">
+      <div class="card">
+        <div class="card-title">
+          <span>📅 Lot Tracing & FEFO (First Expire, First Out)</span>
+          <button class="btn btn-success btn-sm" onclick="openLotModal()">➕ Tag Expiry (Lot)</button>
+          <button class="btn btn-secondary btn-sm" onclick="loadLotTracing()">🔄 Refresh Expiries</button>
+        </div>
+        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">
+          Subaybayan ang expiration dates ng mga natanggap na raw materials. Magbibigay ng alerto ang system kung malapit nang masira ang isang Batch/Lot.
+        </p>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Lot / Batch No.</th>
+                <th>Product Name</th>
+                <th>Quantity Left</th>
+                <th>Expiration Date</th>
+                <th>Health Status</th>
+              </tr>
+            </thead>
+            <tbody id="admin-lot-tbody">
+              <tr><td colspan="5" style="text-align: center; color: #94a3b8; padding: 1.5rem;">Walang naka-tag na expiration dates sa inventory.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================
+         VIEW: ASSET & EQUIPMENT MAINTENANCE
+         ======================================================== -->
+    <div id="view-admin-assets" class="admin-view-section" style="display: none;">
+      <div class="card">
+        <div class="card-title">
+          <span>⚙️ Asset & Equipment Maintenance</span>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-success btn-sm" onclick="openAssetModal()">➕ Add Asset</button>
+            <button class="btn btn-secondary btn-sm" onclick="loadAssets()">🔄 Refresh</button>
+          </div>
+        </div>
+        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">
+          Talaan ng mga kagamitan tulad ng Noodle Machine, Delivery Trucks, at Chillers kasama ang kani-kanilang preventive maintenance schedules.
+        </p>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Asset Code</th>
+                <th>Equipment Name</th>
+                <th>Assigned To (Location)</th>
+                <th>Next Maintenance Due</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="admin-assets-tbody">
+              <tr><td colspan="5" style="text-align: center; color: #94a3b8; padding: 1.5rem;">Walang naka-record na kagamitan.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================
+         VIEW: AUTOMATED PURCHASE REQUESTS (AUTO-PR)
+         ======================================================== -->
+    <div id="view-admin-auto_pr" class="admin-view-section" style="display: none;">
+      <div class="card">
+        <div class="card-title">
+          <span style="color: #059669;">📉 Automated Purchase Requests (Below Buffer)</span>
+          <button class="btn btn-secondary btn-sm" onclick="loadAutoPR()">🔄 Scan Inventory</button>
+        </div>
+        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">
+          Awtomatikong ginagawan ng Draft PR ng system ang lahat ng produkto at raw materials na bumagsak na sa itinakdang Buffer Limit.
+        </p>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Item Code</th>
+                <th>Description</th>
+                <th>Current Stock</th>
+                <th>Buffer Limit</th>
+                <th>Recommended Order Qty</th>
+                <th>Aksyon</th>
+              </tr>
+            </thead>
+            <tbody id="admin-auto-pr-tbody">
+              <tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 1.5rem;">Walang item na bumagsak sa limit sa ngayon.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+<!-- ========================================================
+         VIEW 5: STORAGE STATIONS & UOM MANAGER
+         ======================================================== -->
+    <div id="view-admin-stations" class="admin-view-section" style="display: none;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+        <div class="card" style="margin-bottom: 0;">
+          <div class="card-title">
+            <span>🏷️ Storage Stations (Custom Lokasyon)</span>
+            <button class="btn btn-secondary btn-sm" onclick="loadStorageStations()">🔄 Refresh</button>
+          </div>
+          <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+            <input type="text" id="new-station-label" placeholder="Pangalan ng Station" style="flex: 1;">
+            <button type="button" class="btn btn-success btn-sm" onclick="addNewStorageStation()">➕ Add</button>
+          </div>
+          <div class="table-responsive" style="max-height: 220px; overflow-y: auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Station Label</th>
+                  <th style="width: 80px;">Aksyon</th>
+                </tr>
+              </thead>
+              <tbody id="stations-list-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 0;">
+          <div class="card-title">
+            <span>⚖️ Unit of Measure (UOM) Manager</span>
+            <button class="btn btn-secondary btn-sm" onclick="loadUOMs()">🔄 Refresh</button>
+          </div>
+          <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+            <select id="new-uom-type" style="width: 130px;">
+              <option value="whole">📦 Whole Unit</option>
+              <option value="loose">🥢 Loose Unit</option>
+            </select>
+            <input type="text" id="new-uom-name" placeholder="Pangalan ng UOM (Hal: Box, Kg)" style="flex: 1;">
+            <button type="button" class="btn btn-primary btn-sm" onclick="addNewUOM()">➕ Add UOM</button>
+          </div>
+          <div class="table-responsive" style="max-height: 220px; overflow-y: auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>UOM Name</th>
+                  <th style="width: 80px;">Aksyon</th>
+                </tr>
+              </thead>
+              <tbody id="uom-list-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================
+         VIEW 6: AUTO-BACKUP LOGS & ROLLBACK ENGINE
+         ======================================================== -->
+    <div id="view-admin-backups" class="admin-view-section" style="display: none;">
+      <div class="card" id="product-backups-card">
+        <div class="card-title">
+          <span>🛡️ Product Master Auto-Backup Logs & Version History</span>
+          <button class="btn btn-secondary btn-sm" onclick="loadProductBackupLogs()">🔄 Refresh Backup Logs</button>
+        </div>
+        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">
+          Bago mag-sync o magbago ng mga produkto gamit ang bulk upload, awtomatikong itinatago ng system ang lumang estado. Maaari mong i-download ang lumang kopya o ibalik (Restore) ang database anumang oras.
+        </p>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Petsa at Oras ng Backup</th>
+                <th>Dahilan / Trigger</th>
+                <th>Gumawa / Admin</th>
+                <th>Bilang ng Produkto</th>
+                <th style="width: 220px; text-align: center;">Aksyon</th>
+              </tr>
+            </thead>
+            <tbody id="product-backups-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================
+         VIEW 7: DELIVERY DISPUTES & DAMAGE REPORTS
+         ======================================================== -->
+    <div id="view-admin-disputes" class="admin-view-section" style="display: none;">
+      <div class="card" id="admin-disputes-card">
+        <div class="card-title">
+          <span>🚨 Real-Time Branch Delivery Disputes & Damage Reports</span>
+          <button class="btn btn-secondary btn-sm" onclick="loadAdminDisputes()">🔄 Refresh Incident Reports</button>
+        </div>
+        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">
+          Dito awtomatikong lumalabas kapag may branch na nag-report ng butas, kulang, nalantang gulay, o returned item sa delivery ni Commissary.
+        </p>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Order Ref & Date</th>
+                <th>Branch Source</th>
+                <th>Discrepancy / Damage Summary</th>
+                <th>Driver / Transporter</th>
+                <th>Accounting Resolution</th>
+              </tr>
+            </thead>
+            <!-- Search bar para sa Delivery Disputes -->
+          <div style="margin-bottom: 1rem;">
+            <input type="text" id="admin-dispute-search" placeholder="🔎 I-type ang PO Number, SI / DR Ref, Branch, o Driver..." oninput="filterAdminDisputesTable()" style="font-size: 0.9rem;">
+          </div>
+          <tbody id="admin-disputes-tbody">
+              <tr>
+                <td colspan="5" style="text-align: center; color: #94a3b8; padding: 1.5rem;">
+                  Walang aktibong reklamo o damage dispute mula sa mga branch.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================
+         VIEW 8: VARIANCE & 3PL LOGISTICS REPORTS
+         ======================================================== -->
+    <div id="view-admin-reports" class="admin-view-section" style="display: none;">
+      <div class="card">
+        <div class="card-title">
+          <span>🔍 Smart Reporting: Variance & Shrinkage Analytics</span>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-secondary btn-sm" onclick="copyTableToGoogleSheets()">📋 Copy to Sheets</button>
+            <button class="btn btn-secondary btn-sm" onclick="window.print()">🖨️ Print</button>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table id="variance-table">
+            <thead>
+              <tr>
+                <th>Item Description</th>
+                <th>Storage Station</th>
+                <th>Ordered / Dispatched</th>
+                <th>Physical Count</th>
+                <th>Variance</th>
+                <th>Liability Status</th>
+              </tr>
+            </thead>
+            <tbody id="variance-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>🚚 3PL Logistics & Petty Cash Reimbursements</span>
+        </div>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Courier</th>
+                <th>Route</th>
+                <th>Toll + Fare + Tip</th>
+                <th>Abono ng Commissary?</th>
+                <th>Accounting Action</th>
+              </tr>
+            </thead>
+            <tbody id="reimbursement-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    
+    <!-- ========================================================
+         VIEW: VENDOR PURCHASE ORDERS (PO)
+         ======================================================== -->
+    <div id="view-admin-purchase-orders" class="admin-view-section" style="display: none;">
+      <div class="card">
+        <div class="card-title">
+          <span style="color: #059669;">📝 Vendor Purchase Orders (PO)</span>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button class="btn btn-success btn-sm" onclick="openCreatePOModal()">➕ Create New PO</button>
+            <button class="btn btn-primary btn-sm" onclick="exportVendorPOsCSV()">📥 Export CSV</button>
+            <button class="btn btn-secondary btn-sm" onclick="loadAdminVendorPOs()">🔄 Refresh</button>
+          </div>
+        </div>
+        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">
+          Talaan ng mga ginawang Purchase Order para sa mga External Vendors/Suppliers. Makikita rito kung sino ang gumawa at kailan.
+        </p>
+        <div style="display: flex; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap;">
+          <input type="text" id="admin-po-search" placeholder="🔎 Mag-search ng PO Number, Vendor, o Gumawa..." oninput="filterAdminVendorPOs()" style="flex: 1; font-size: 0.9rem;">
+          <button type="button" class="btn btn-primary" onclick="openCameraBarcodeScanner('admin_po_list')">📷 Scan PO Barcode</button>
+        </div>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>PO Number & Date</th>
+                <th>Vendor / Supplier</th>
+                <th>Items Count</th>
+                <th>Total PO Amount</th>
+                <th>Status</th>
+                <th>Created By</th>
+                <th>Aksyon</th>
+              </tr>
+            </thead>
+            <tbody id="admin-vendor-po-tbody">
+              <tr>
+                <td colspan="7" style="text-align: center; color: #94a3b8; padding: 1.5rem;">Kinukuha ang PO records...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================
+         VIEW: ACCOUNTS PAYABLE (AP) INVOICES
+         ======================================================== -->
+    <div id="view-admin-ap-invoices" class="admin-view-section" style="display: none;">
+      <div class="card">
+        <div class="card-title">
+          <span style="color: #2563eb;">🧾 Accounts Payable (AP) / Invoice Orders</span>
+          <button class="btn btn-secondary btn-sm" onclick="loadAdminAPInvoices()">🔄 Refresh</button>
+        </div>
+        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">
+          Dito titingnan ng Accounting kung nai-receive na ang PO at magkano ang actual na babayaran sa Vendor.
+        </p>
+        <div style="margin-bottom: 1rem;">
+          <input type="text" id="admin-ap-search" placeholder="🔎 Mag-search ng PO Number o Vendor..." oninput="filterAdminAPInvoices()" style="font-size: 0.9rem;">
+        </div>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>PO Ref & Invoice No.</th>
+                <th>Vendor</th>
+                <th>Date Received</th>
+                <th>Expected Total</th>
+                <th>Actual Billed Total</th>
+                <th>AP Status</th>
+                <th>Aksyon</th>
+              </tr>
+            </thead>
+            <tbody id="admin-ap-invoice-tbody">
+              <tr>
+                <td colspan="7" style="text-align: center; color: #94a3b8; padding: 1.5rem;">Kinukuha ang Invoice records...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+<!-- ========================================================
+         VIEW: PLANT SPOILAGE APPROVALS
+         ======================================================== -->
+    <div id="view-admin-spoilage" class="admin-view-section" style="display: none;">
+      <div class="card">
+        <div class="card-title">
+          <span style="color: #d97706;">📉 Plant Spoilage & Inventory Adjustment Approvals</span>
+          <button class="btn btn-secondary btn-sm" onclick="loadAdminSpoilageRequests()">🔄 Refresh Requests</button>
+        </div>
+        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">
+          Lahat ng dineklarang sira, panis, o discrepancy mula sa Commissary ay rito papasok. Si Admin ang magdedesisyon kung ia-approve bago ito awtomatikong ibawas sa System Inventory.
+        </p>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Petsa ng Report</th>
+                <th>Item / Produkto</th>
+                <th>Qty na Sira</th>
+                <th>Dahilan / Salaysay</th>
+                <th>Ebidensya (Photo)</th>
+                <th>Status</th>
+                <th>Aksyon</th>
+              </tr>
+            </thead>
+            <tbody id="admin-spoilage-tbody">
+              <tr>
+                <td colspan="7" style="text-align: center; color: #94a3b8; padding: 1.5rem;">Walang pending na Spoilage Request.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================
+         VIEW: SYSTEM AUDIT LOGS
+         ======================================================== -->
+    <div id="view-admin-logs" class="admin-view-section" style="display: none;">
+      <div class="card">
+        <div class="card-title">
+          <span>🕵️ Universal System Audit Logs</span>
+          <button class="btn btn-primary btn-sm" onclick="loadSystemAuditLogs()">🔄 Refresh Logs</button>
+        </div>
+        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">
+          Talaan ng lahat ng galaw sa system: Logins, pagbabago ng stock, pagtanggap/dispatch ng order, at mga kinansela. Walang makakatakas na detalye rito.
+        </p>
+        <div style="margin-bottom: 1rem;">
+          <input type="text" id="admin-logs-search" placeholder="🔎 Mag-search ng user email, aksyon, o detalye..." oninput="filterSystemAuditLogs()" style="font-size: 0.9rem;">
+        </div>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Date & Time</th>
+                <th>Aksyon / Kategorya</th>
+                <th>Gumawa (User)</th>
+                <th>Eksaktong Detalye</th>
+              </tr>
+            </thead>
+            <tbody id="admin-logs-tbody">
+              <tr>
+                <td colspan="4" style="text-align: center; color: #94a3b8; padding: 1.5rem;">Kinukuha ang logs...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+<!-- ========================================================
+         VIEW 9: COMMISSARY TEAM DIRECTORY
+         ======================================================== -->
+<div id="view-admin-team" class="admin-view-section" style="display: none;">
+      <div class="card">
+        <div class="card-title">
+          <span>👥 Commissary Team & Delivery Personnel Directory</span>
+          <button class="btn btn-secondary btn-sm" onclick="loadCommissaryTeam()">🔄 Refresh List</button>
+        </div>
+        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">
+          Idagdag ang pangalan ng mga Stockman, QA Checkers, at Drivers upang awtomatikong lumabas ang kanilang pangalan bilang pagpipilian at sa mismong resibo (DR/SI). Hindi na kailangang gumawa ng user account para sa kanila.
+        </p>
+
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.375rem; padding: 1rem; margin-bottom: 1.5rem;">
+          <h4 style="margin: 0 0 0.75rem 0; color: #1e293b; font-size: 0.95rem;">➕ Magdagdag ng Bagong Tauhan</h4>
+          <input type="hidden" id="team-doc-id" value="">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-items: flex-end;">
+            <div class="form-group" style="margin: 0;">
+              <label>Buong Pangalan:</label>
+              <input type="text" id="team-name" placeholder="Hal: Juan Dela Cruz">
+            </div>
+            <div class="form-group" style="margin: 0;">
+              <label>Tungkulin (Role):</label>
+              <select id="team-role">
+                <option value="stockman">📦 Stockman / Packer</option>
+                <option value="checker">🔍 Stock Head / QA Checker</option>
+                <option value="driver">🚚 Delivery Driver / Transporter</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin: 0;">
+              <label>Vehicle / Plate No. (Kung Driver):</label>
+              <input type="text" id="team-note" placeholder="Hal: NBD-1234 L300">
+            </div>
+            <div class="form-group" style="margin: 0; display: flex; align-items: center; gap: 0.5rem; height: 38px;">
+              <input type="checkbox" id="team-default" style="width: 18px; height: 18px;">
+              <label for="team-default" style="margin: 0; font-weight: 700; color: #1e293b; cursor: pointer;">Gawing Default #1 sa Resibo</label>
+            </div>
+            <div style="margin: 0;">
+              <button type="button" class="btn btn-primary" onclick="saveTeamMember()" style="width: 100%;">💾 I-save</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Pangalan</th>
+                <th>Role / Tungkulin</th>
+                <th>Plate No. / Notes</th>
+                <th style="text-align: center;">Default Status</th>
+                <th style="text-align: center;">Aksyon</th>
+              </tr>
+            </thead>
+            <tbody id="team-directory-tbody">
+              <tr>
+                <td colspan="5" style="text-align: center; color: #94a3b8; padding: 1.5rem;">Kinukuha ang listahan ng tauhan...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <!-- ========================================================
+         VIEW 10: DATABASE TESTING & TRUNCATE TOOL (Admin Danger Zone)
+         ======================================================== -->
+    <div id="view-admin-truncate" class="admin-view-section" style="display: none;">
+      <div class="card" style="border: 2px solid #ef4444; background: #fff5f5;">
+        <div class="card-title" style="color: #991b1b;">
+          <span>🧹 Database Testing & Truncate Manager (Admin Danger Zone)</span>
+        </div>
+        <p style="font-size: 0.85rem; color: #7f1d1d; margin-bottom: 1rem;">
+          Ang tools na ito ay para lamang sa paglilinis ng mga test data habang sinusubukan ang system. Ang mga accounts ng <b>Users & Logins</b> ay ligtas at hindi magagalaw.
+        </p>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+          <button type="button" class="btn btn-danger btn-sm" onclick="truncateCollection('orders')" style="font-weight: 700;">
+            🗑️ Truncate Orders & Deliveries
+          </button>
+          <button type="button" class="btn btn-danger btn-sm" onclick="truncateCollection('disputes')" style="font-weight: 700;">
+            🗑️ Truncate Disputes & Returns
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="truncateCollection('products')" style="font-weight: 700;">
+            📦 Truncate Test Products Master
+          </button>
+          <button type="button" class="btn btn-warning btn-sm" onclick="truncateCollection('vendors')" style="font-weight: 700;">
+            🏢 Truncate Vendor List
+          </button>
+          <button type="button" class="btn btn-warning btn-sm" onclick="truncateCollection('customers')" style="font-weight: 700;">
+            👥 Truncate Customer List
+          </button>
+          <button type="button" class="btn btn-warning btn-sm" onclick="truncateCollection('uom_settings')" style="font-weight: 700;">
+            ⚖️ Truncate UOM Settings
+          </button>
+        </div>
+      </div>
+    </div>
+
+</div>
+
+  
+  <!-- Modal: Receive PO / AP Invoice -->
+  <div id="admin-receive-po-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 900px; width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.75rem; margin-bottom: 1rem;">
+        <div>
+          <h3 style="margin: 0; color: #2563eb;">📦 Receive Vendor PO & AP Invoice</h3>
+          <small style="color: #64748b;">PO Reference: <b id="recv-po-number" style="color: #0f172a;">--</b></small>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('admin-receive-po-modal').style.display='none'">✕ Isara</button>
+      </div>
+
+      <div style="overflow-y: auto; flex: 1; padding-right: 0.5rem;">
+        <input type="hidden" id="recv-po-id" value="">
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; background: #f8fafc; padding: 1rem; border-radius: 0.5rem; border: 1px solid #cbd5e1; margin-bottom: 1rem;">
+          <div>
+            <label style="font-weight: 700; color: #1e293b;">🏢 Vendor / Supplier:</label>
+            <div id="recv-po-vendor" style="font-size: 1.1rem; color: #059669; font-weight: 800;">--</div>
+          </div>
+          <div>
+            <label style="font-weight: 700; color: #b91c1c;">🧾 Vendor Invoice No. (Kailangan):</label>
+            <input type="text" id="recv-po-invoice-no" placeholder="Hal: INV-998877" style="font-size: 0.95rem; margin-top: 0.25rem; border: 1px solid #fca5a5;">
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+          <b style="font-size: 0.95rem; color: #1e293b;">📋 Checking & Actual Received Qty:</b>
+          <button type="button" class="btn btn-primary btn-sm" onclick="openCameraBarcodeScanner('admin_receive_po')" style="font-weight: 700;">📷 Scan Barcode ng Dumating</button>
+        </div>
+
+        <div class="table-responsive" style="border: 1px solid #e2e8f0; border-radius: 0.375rem; margin-bottom: 1rem;">
+          <table>
+            <thead>
+              <tr style="background: #f1f5f9; font-size: 0.85rem;">
+                <th>Item Code & Description</th>
+                <th>Expected Qty</th>
+                <th style="width: 120px;">Actual Whole</th>
+                <th style="width: 120px;">Actual Loose</th>
+                <th>Unit Cost</th>
+                <th>Actual Subtotal</th>
+              </tr>
+            </thead>
+            <tbody id="recv-po-tbody">
+              <!-- Dynamic Rows -->
+            </tbody>
+          </table>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; align-items: center; border-top: 2px solid #e2e8f0; padding-top: 1rem; margin-bottom: 1rem;">
+          <div style="text-align: right;">
+            <small style="color: #64748b; font-weight: 700; text-transform: uppercase;">Actual Billed Total (AP):</small>
+            <div style="font-size: 1.6rem; font-weight: 900; color: #b91c1c;" id="recv-po-grand-total">₱0.00</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid #e2e8f0; padding-top: 0.75rem; margin-top: 1rem;">
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('admin-receive-po-modal').style.display='none'">Kanselahin</button>
+        <button type="button" class="btn btn-success" style="font-weight: 700;" onclick="submitReceivePO()">✅ I-save, Update Inventory, & Send to AP</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Add / Edit Product Modal -->
+  <div id="admin-product-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 650px;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem;">
+        <h3 style="color: #1e293b; margin: 0;" id="admin-modal-title">✏️ I-edit ang Produkto</h3>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeAdminProductModal()">✕</button>
+      </div>
+
+      <input type="hidden" id="admin-edit-mode" value="edit">
+      <input type="hidden" id="admin-original-doc-id" value="">
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label>POS Code</label>
+          <input type="text" id="admin-item-pos-code" placeholder="Hal: POS-101">
+        </div>
+        <div class="form-group">
+          <label>SAP Code / Sub Code</label>
+          <input type="text" id="admin-item-code" placeholder="Hal: SAP-001" required>
+        </div>
+        <div class="form-group">
+          <label>Barcode (Scan / Digits)</label>
+          <div style="display: flex; gap: 0.35rem;">
+            <input type="text" id="admin-item-barcode" placeholder="Hal: 4801234567890" style="flex: 1;">
+            <button type="button" class="btn btn-primary btn-sm" onclick="openCameraBarcodeScanner('admin_edit_modal')" title="I-scan ang bagong barcode">📷</button>
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Pangalan ng Produkto (Item Description)</label>
+        <input type="text" id="admin-item-name" placeholder="Hal: Beef Tapa Marinated" required>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label>Commissary Hub</label>
+          <input type="text" id="admin-item-hub" placeholder="Hal: Commissary Meat o Central">
+        </div>
+        <div class="form-group">
+          <label style="color: #059669; font-weight: 700;">🏢 Vendor / Supplier (Para sa PO)</label>
+          <select id="admin-item-supplier" style="border-color: #10b981;"><option value="">-- In-House / No Vendor --</option></select>
+        </div>
+        <div class="form-group">
+          <label>📍 Storage Station</label>
+          <select id="admin-item-station"></select>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label>📦 Whole Unit (UOM)</label>
+          <select id="admin-item-whole-uom"></select>
+        </div>
+        <div class="form-group">
+          <label>🥢 Loose Unit (UOM)</label>
+          <select id="admin-item-loose-uom"></select>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; background: #f8fafc; padding: 0.75rem; border-radius: 0.375rem; border: 1px solid #e2e8f0; margin-bottom: 1rem;">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label>💰 Presyo Whole Unit (₱)</label>
+          <input type="number" id="admin-item-whole-price" oninput="autoComputeAdminLoosePrice()" value="0" min="0" step="0.01">
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label>🪙 Presyo Loose Unit (₱)</label>
+          <input type="number" id="admin-item-loose-price" value="0" min="0" step="0.01">
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label>Conversion (Whole to Loose)</label>
+          <input type="number" id="admin-item-conversion" oninput="autoComputeAdminLoosePrice()" value="1" min="1">
+        </div>
+        <div class="form-group">
+          <label>Reorder Buffer Limit</label>
+          <input type="number" id="admin-item-buffer" value="5" min="1">
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label>📅 Expiration Date</label>
+          <input type="date" id="admin-item-expiry">
+        </div>
+        <div class="form-group">
+          <label>📦 Packaging & Packing Instructions</label>
+          <input type="text" id="admin-item-packaging" placeholder="Hal: I-vacuum pack bawat 1kg bago i-freeze">
+        </div>
+      </div>
+
+      <button type="button" class="btn btn-success" style="width: 100%; margin-top: 0.5rem; font-weight: 700;" onclick="saveAdminProduct()">
+        💾 I-save ang mga Pagbabago sa Database
+      </button>
+    </div>
+  </div>
+
+  <!-- Admin Profile Modal -->
+  <div id="admin-profile-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 480px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem;">
+        <h3 style="margin: 0; color: #1e293b;">👤 I-edit ang Profile (Admin)</h3>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeAdminProfileModal()">✕</button>
+      </div>
+      <!-- Profile Picture Section -->
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 8px; margin-bottom: 1.25rem;">
+        <img id="admin-prof-pic-preview" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #2563eb; display: none;" />
+        <div id="admin-prof-pic-fallback" style="width: 80px; height: 80px; border-radius: 50%; background: #e2e8f0; color: #475569; font-weight: 800; font-size: 2rem; display: flex; align-items: center; justify-content: center;">A</div>
+        <label style="cursor: pointer; background: #f1f5f9; padding: 4px 12px; border-radius: 4px; font-size: 0.8rem; border: 1px solid #cbd5e1; font-weight: 600; color: #1e293b;">
+          📷 Pumili ng Profile Picture
+          <input type="file" id="admin-prof-pic" accept="image/*" style="display: none;" onchange="previewProfilePhoto(event, 'admin-prof-pic-preview', 'admin-prof-pic-fallback')">
+        </label>
+      </div>
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="admin-prof-email" disabled style="background: #f1f5f9;">
+      </div>
+      <div class="form-group">
+        <label>Buong Pangalan</label>
+        <input type="text" id="admin-prof-name" placeholder="Pangalan ng Admin">
+      </div>
+      <div class="form-group">
+        <label>Bagong Password (Iwanang blangko kung hindi papalitan)</label>
+        <input type="password" id="admin-prof-new-pass" placeholder="••••••••">
+      </div>
+      <button type="button" class="btn btn-primary" style="width: 100%;" onclick="saveAdminProfile()">💾 I-save ang Profile</button>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <b>Programmed by Renz Aldrin Gomez, 2026</b> | KusinaERP Enterprise System
+  </footer>
+
+  <script src="firebase-config.js"></script>
+  <script src="app.js"></script>
+  <script>
+    enforceRoleAccess(['admin']);
+    const u = getCurrentUser();
+    if (u) document.getElementById('user-display').innerText = `Admin: ${u.name || u.email}`;
+    window.addEventListener('load', () => {
+      loadSystemBranding();
+      loadAdminAnalytics();
+      syncUserProfileFromFirestore();
+    });
+  </script>
+  <!-- Modal: Mobile Camera Barcode Scanner -->
+  <div id="barcode-scanner-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 450px; text-align: center;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+        <h3 style="margin: 0; color: #1e293b;">📷 Camera Barcode Scanner</h3>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeCameraBarcodeScanner()">✕ Isara</button>
+      </div>
+      <div id="barcode-reader-box" style="width: 100%; min-height: 250px; background: #000; border-radius: 0.5rem; overflow: hidden;"></div>
+      <small style="color: #64748b; display: block; margin-top: 0.5rem;">Itapat ang camera sa barcode sticker ng item o kahon.</small>
+    </div>
+  </div>
+
+
+  <!-- Modal: Create / View Vendor PO -->
+  <div id="vendor-po-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 850px; width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.75rem; margin-bottom: 1rem;">
+        <div>
+          <h3 style="margin: 0; color: #059669;" id="vendor-po-modal-title">📝 Create Purchase Order</h3>
+          <small id="vendor-po-modal-subtitle" style="color: #64748b;">PO Number: Gagawa pagkatapos i-save</small>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeVendorPOModal()">✕ Isara</button>
+      </div>
+
+      <div style="overflow-y: auto; flex: 1; padding-right: 0.5rem;" id="po-form-container">
+        <input type="hidden" id="po-view-mode" value="create">
+        
+        <!-- PO Header Info -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; background: #f8fafc; padding: 1rem; border-radius: 0.5rem; border: 1px solid #cbd5e1; margin-bottom: 1rem;">
+          <div>
+            <label style="font-weight: 700; color: #1e293b;">🏢 Vendor / Supplier:</label>
+            <input type="text" id="po-vendor-select" list="po-vendor-datalist" onchange="onPOVendorChange()" placeholder="-- Mag-type o Pumili ng Vendor --" style="font-size: 0.9rem; margin-top: 0.25rem; width: 100%; border: 1px solid #cbd5e1; padding: 0.6rem; border-radius: 4px;">
+            <datalist id="po-vendor-datalist"></datalist>
+          </div>
+          <div>
+            <label style="font-weight: 700; color: #1e293b;">📅 PO Order Date:</label>
+            <input type="date" id="po-order-date" style="font-size: 0.9rem; margin-top: 0.25rem;">
+          </div>
+        </div>
+
+        <!-- Add Product Section (Hidden kapag view mode) -->
+        <div id="po-add-product-section" style="background: #eff6ff; border: 1.5px solid #93c5fd; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+          <b style="color: #1e40af; display: block; margin-bottom: 0.5rem;">➕ Magdagdag ng Item sa PO</b>
+          <small style="color: #3b82f6; display: block; margin-bottom: 0.5rem;">Ang mga lalabas lang sa ibaba ay ang mga produktong naka-tag kay <b id="po-active-vendor-name">--</b> sa Product Masterlist.</small>
+          
+          <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: 0.5rem; align-items: end;">
+            <div>
+              <label style="font-size: 0.8rem;">Pumili ng Produkto:</label>
+              <select id="po-product-select" onchange="onPOProductChange()" style="font-size: 0.85rem;" disabled>
+                <option value="">-- Pumili Muna ng Vendor --</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size: 0.8rem;">UOM:</label>
+              <select id="po-uom-select" style="font-size: 0.85rem;" disabled></select>
+            </div>
+            <div>
+              <label style="font-size: 0.8rem;">Unit Cost (₱):</label>
+              <input type="number" id="po-unit-cost" value="0" step="0.01" style="font-size: 0.85rem;" disabled>
+            </div>
+            <div>
+              <label style="font-size: 0.8rem;">Quantity:</label>
+              <input type="number" id="po-qty" value="1" min="1" step="0.5" style="font-size: 0.85rem;">
+            </div>
+            <button type="button" class="btn btn-primary" onclick="addPOItemToCart()">I-add</button>
+          </div>
+        </div>
+
+        <!-- PO Cart Table -->
+        <b style="font-size: 0.95rem; color: #1e293b; display: block; margin-bottom: 0.5rem;">📋 PO Item List:</b>
+        <div class="table-responsive" style="border: 1px solid #e2e8f0; border-radius: 0.375rem; margin-bottom: 1rem;">
+          <table>
+            <thead>
+              <tr style="background: #f1f5f9; font-size: 0.85rem;">
+                <th>Item Code</th>
+                <th>Description</th>
+                <th>Qty</th>
+                <th>Unit Cost</th>
+                <th>Subtotal</th>
+                <th id="po-table-action-header" style="width: 50px;">Aksyon</th>
+              </tr>
+            </thead>
+            <tbody id="po-cart-tbody">
+              <tr>
+                <td colspan="6" style="text-align: center; color: #94a3b8; padding: 1rem;">Walang item sa PO basket.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; align-items: center; border-top: 2px solid #e2e8f0; padding-top: 1rem; margin-bottom: 1rem;">
+          <div style="text-align: right;">
+            <small style="color: #64748b; font-weight: 700; text-transform: uppercase;">PO Grand Total:</small>
+            <div style="font-size: 1.5rem; font-weight: 900; color: #b91c1c;" id="po-grand-total">₱0.00</div>
+          </div>
+        </div>
+
+        <!-- Audit Trail (View Mode Only) -->
+        <div id="po-audit-trail-box" style="display: none; background: #f8fafc; border: 1px dashed #cbd5e1; padding: 0.85rem; border-radius: 0.375rem; font-size: 0.85rem; color: #475569;">
+           <b>Audit Trail:</b><br>
+           Created By: <span id="po-audit-creator">--</span><br>
+           System Timestamp: <span id="po-audit-time">--</span>
+        </div>
+
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; padding-top: 0.75rem; margin-top: 1rem;">
+        <div>
+          <button type="button" class="btn btn-primary" id="btn-print-active-po" style="display: none; font-weight: 700;" onclick="printActiveVendorPOSlip()">🖨️ Print PO Slip (Full-Width A4)</button>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+          <button type="button" class="btn btn-secondary" onclick="closeVendorPOModal()">Isara</button>
+          <button type="button" class="btn btn-success" id="btn-save-vendor-po" style="font-weight: 700;" onclick="submitVendorPO()">💾 I-save at I-generate ang PO</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Expanded Employee Modal (HRM) -->
+  <div id="hr-employee-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 850px; max-height: 90vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; margin-bottom: 1rem;">
+        <h3 style="margin: 0; color: #2563eb;" id="hr-emp-title">➕ Add Employee</h3>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('hr-employee-modal').style.display='none'">✕</button>
+      </div>
+      <input type="hidden" id="hr-emp-id">
+
+      <!-- 1. Personal Info -->
+      <h4 style="margin-bottom: 10px; color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px;">1. Personal Information</h4>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 15px;">
+        <div class="form-group" style="margin:0;"><label>First Name</label><input type="text" id="hr-emp-fname"></div>
+        <div class="form-group" style="margin:0;"><label>Last Name</label><input type="text" id="hr-emp-lname"></div>
+        <div class="form-group" style="margin:0;"><label>Middle Name</label><input type="text" id="hr-emp-mname"></div>
+        <div class="form-group" style="margin:0;"><label>Nickname</label><input type="text" id="hr-emp-nickname"></div>
+        <div class="form-group" style="margin:0;"><label>Date of Birth</label><input type="date" id="hr-emp-dob"></div>
+        <div class="form-group" style="margin:0;"><label>Civil Status</label>
+          <select id="hr-emp-civil"><option value="Single">Single</option><option value="Married">Married</option><option value="Widowed">Widowed</option><option value="Separated">Separated</option></select>
+        </div>
+        <div class="form-group" style="margin:0;"><label>Contact No.</label><input type="text" id="hr-emp-contact"></div>
+        <div class="form-group" style="margin:0;"><label>Email Address</label><input type="email" id="hr-emp-email"></div>
+        <div class="form-group" style="margin:0;"><label>Home Address</label><input type="text" id="hr-emp-address"></div>
+      </div>
+
+      <!-- 2. Employment Details -->
+      <h4 style="margin-bottom: 10px; color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px;">2. Employment Details</h4>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 15px;">
+        <div class="form-group" style="margin:0;"><label>Company</label><input type="text" id="hr-emp-company"></div>
+        <div class="form-group" style="margin:0;"><label>Department</label><input type="text" id="hr-emp-dept"></div>
+        <div class="form-group" style="margin:0;"><label>Sub-Department</label><input type="text" id="hr-emp-subdept"></div>
+        <div class="form-group" style="margin:0;"><label>Job Title / Position</label><input type="text" id="hr-emp-role"></div>
+        <div class="form-group" style="margin:0;"><label>Classification</label><select id="hr-emp-class"><option value="Rank & File">Rank & File</option><option value="Supervisory">Supervisory</option><option value="Managerial">Managerial</option></select></div>
+        <div class="form-group" style="margin:0;"><label>Employment Type</label><select id="hr-emp-type"><option value="Regular">Regular</option><option value="Probationary">Probationary</option><option value="Direct">Direct</option><option value="Contractual">Contractual</option></select></div>
+        <div class="form-group" style="margin:0;"><label>Hire Date</label><input type="date" id="hr-emp-hiredate"></div>
+        <div class="form-group" style="margin:0;"><label>Direct Hire Date</label><input type="date" id="hr-emp-directdate"></div>
+        <div class="form-group" style="margin:0;"><label>Regularization Date</label><input type="date" id="hr-emp-regulardate"></div>
+        <div class="form-group" style="margin:0;"><label>Reporting To</label><input type="text" id="hr-emp-reportingto"></div>
+        <div class="form-group" style="margin:0;"><label>Status</label><select id="hr-emp-status"><option value="Active">Active</option><option value="On-Leave">On-Leave</option><option value="Resigned">Resigned</option><option value="Terminated">Terminated</option></select></div>
+      </div>
+
+      <!-- 3. Government & Statutory -->
+      <h4 style="margin-bottom: 10px; color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px;">3. Government & Statutory</h4>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 15px;">
+        <div class="form-group" style="margin:0;"><label>SSS No.</label><input type="text" id="hr-emp-sss"></div>
+        <div class="form-group" style="margin:0;"><label>PHIC (PhilHealth) No.</label><input type="text" id="hr-emp-phic"></div>
+        <div class="form-group" style="margin:0;"><label>HDMF (Pag-IBIG) No.</label><input type="text" id="hr-emp-hdmf"></div>
+        <div class="form-group" style="margin:0;"><label>TIN No.</label><input type="text" id="hr-emp-tin"></div>
+        <div class="form-group" style="margin:0;"><label>RDO Code</label><input type="text" id="hr-emp-rdo"></div>
+      </div>
+
+      <!-- 4. Payroll, Compensation & Emergency -->
+      <h4 style="margin-bottom: 10px; color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px;">4. Payroll, Compensation & Emergency</h4>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 15px;">
+        <div class="form-group" style="margin:0;"><label>Payroll Type</label><select id="hr-emp-paytype"><option value="Daily">Daily</option><option value="Monthly">Monthly</option></select></div>
+        <div class="form-group" style="margin:0;"><label>BDO Payroll Account</label><input type="text" id="hr-emp-bdo"></div>
+        <div class="form-group" style="margin:0;"><label>Base Salary Rate (₱)</label><input type="number" id="hr-emp-salary" step="0.01" value="0"></div>
+        <div class="form-group" style="margin:0;"><label>Allowance (₱)</label><input type="number" id="hr-emp-allowance" step="0.01" value="0"></div>
+        <div class="form-group" style="margin:0;"><label>Deminimis (₱)</label><input type="number" id="hr-emp-deminimis" step="0.01" value="0"></div>
+        <div class="form-group" style="margin:0;"><label>Leave Entitlement (Days)</label><input type="number" id="hr-emp-leaves" step="0.5" value="0"></div>
+        <div class="form-group" style="margin:0;"><label>SSS Loan Status</label><input type="text" id="hr-emp-sssloan" placeholder="e.g. Active / None"></div>
+        <div class="form-group" style="margin:0;"><label>HDMF Loan Status</label><input type="text" id="hr-emp-hdmfloan" placeholder="e.g. Active / None"></div>
+        <div class="form-group" style="margin:0;"><label>Emergency Contact Person</label><input type="text" id="hr-emp-emerperson"></div>
+        <div class="form-group" style="margin:0;"><label>Emergency Contact No.</label><input type="text" id="hr-emp-emerno"></div>
+      </div>
+
+      <button class="btn btn-primary" style="width: 100%; font-weight: bold; font-size: 1.1rem;" onclick="saveEmployee()">💾 Save Employee Details</button>
+    </div>
+  </div>
+
+  <!-- Modal: Generate Payslip -->
+  <!-- Comprehensive Kenji Tei Style Salary Slip Generator Modal -->
+  <div id="hr-payroll-modal" class="modal-overlay" style="display: none; z-index: 9999;">
+    <div class="modal-content" style="max-width: 950px; width: 95%; max-height: 92vh; display: flex; flex-direction: column; border-top: 5px solid #059669; padding: 1.5rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; margin-bottom: 1rem;">
+        <div>
+          <h3 style="margin: 0; color: #059669;">🧾 Generate Salary Slip (Kenji Tei Standard)</h3>
+          <small style="color: #64748b;">Itakda ang date range at allowances/deductions. Mananatili itong Draft hanggang hindi pormal na nire-release.</small>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closePayrollModal()">✕</button>
+      </div>
+
+      <div style="overflow-y: auto; flex: 1; padding-right: 0.5rem;" id="payroll-modal-scroll">
+        <!-- 1. Header Information -->
+        <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem;">
+          <h4 style="margin: 0 0 0.5rem 0; color: #1e293b; font-size: 0.95rem;">1. Payroll Period & Employee Info</h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem;">
+            <div class="form-group" style="margin: 0;">
+              <label style="font-weight: 700;">Pumili ng Empleyado:</label>
+              <select id="pay-emp-select" onchange="onPayrollEmpChange()" style="font-size: 0.85rem; font-weight: 600;"></select>
+            </div>
+            <div class="form-group" style="margin: 0;">
+              <label style="font-weight: 700;">Company Registered:</label>
+              <input type="text" id="pay-company" value="KTFGI" style="font-size: 0.85rem;">
+            </div>
+            <div class="form-group" style="margin: 0;">
+              <label style="font-weight: 700;">Location / Branch:</label>
+              <input type="text" id="pay-location" placeholder="Hal: HO o Branch" style="font-size: 0.85rem;">
+            </div>
+            <div class="form-group" style="margin: 0;">
+              <label style="font-weight: 700;">Payroll Period (Text / Cut-off):</label>
+              <input type="text" id="pay-period-text" placeholder="Hal: MAY 16-31, 2026" style="font-size: 0.85rem; font-weight: 700; color: #059669;">
+            </div>
+            <div class="form-group" style="margin: 0;">
+              <label style="font-size: 0.8rem;">Start Date:</label>
+              <input type="date" id="pay-start-date" style="font-size: 0.85rem;">
+            </div>
+            <div class="form-group" style="margin: 0;">
+              <label style="font-size: 0.8rem;">End Date:</label>
+              <input type="date" id="pay-end-date" style="font-size: 0.85rem;">
+            </div>
+            <div class="form-group" style="margin: 0;">
+              <label style="font-size: 0.8rem;">Daily Rate (₱):</label>
+              <input type="number" id="pay-daily-rate" step="0.01" value="0" oninput="calculateSalarySlipLive()" style="font-size: 0.85rem; font-weight: 700;">
+            </div>
+            <div class="form-group" style="margin: 0;">
+              <label style="font-size: 0.8rem;">Number of Days Worked:</label>
+              <input type="number" id="pay-days-count" step="0.5" value="13" oninput="calculateSalarySlipLive()" style="font-size: 0.85rem; font-weight: 700;">
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Dual Column: Earnings vs Deductions -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+          
+          <!-- EARNINGS COLUMN -->
+          <div style="background: #ffffff; border: 1.5px solid #fecaca; border-radius: 0.5rem; overflow: hidden;">
+            <div style="background: #f87171; color: #fff; font-weight: 800; padding: 0.5rem 0.75rem; font-size: 0.9rem; display: flex; justify-content: space-between;">
+              <span>Earnings</span>
+              <span>Amount (₱)</span>
+            </div>
+            <div style="padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.85rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Basic Pay:</span>
+                <input type="number" id="pay-basic-amt" step="0.01" value="0" oninput="calculateSalarySlipLive()" style="width: 130px; text-align: right; padding: 0.25rem;">
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Allowance:</span>
+                <input type="number" id="pay-allowance-amt" step="0.01" value="0" oninput="calculateSalarySlipLive()" style="width: 130px; text-align: right; padding: 0.25rem;">
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Deminimis:</span>
+                <input type="number" id="pay-deminimis-amt" step="0.01" value="0" oninput="calculateSalarySlipLive()" style="width: 130px; text-align: right; padding: 0.25rem;">
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span>SL Refund:</span>
+                <input type="number" id="pay-sl-refund" step="0.01" value="0" oninput="calculateSalarySlipLive()" style="width: 130px; text-align: right; padding: 0.25rem;">
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Leave (w/ Pay): <input type="number" id="pay-leave-days" placeholder="Days" style="width: 55px; text-align: center; padding: 2px;" value="0"></span>
+                <input type="number" id="pay-leave-amt" step="0.01" value="0" oninput="calculateSalarySlipLive()" style="width: 130px; text-align: right; padding: 0.25rem;">
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Other Allowances:</span>
+                <input type="number" id="pay-other-allowance" step="0.01" value="0" oninput="calculateSalarySlipLive()" style="width: 130px; text-align: right; padding: 0.25rem;">
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span>ADJ: Basic, Allowance, Deminimis:</span>
+                <input type="number" id="pay-adj-basic" step="0.01" value="0" oninput="calculateSalarySlipLive()" style="width: 130px; text-align: right; padding: 0.25rem;">
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span>OT Adjustment:</span>
+                <input type="number" id="pay-ot-adj" step="0.01" value="0" oninput="calculateSalarySlipLive()" style="width: 130px; text-align: right; padding: 0.25rem;">
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Holiday Adjustment:</span>
+                <input type="number" id="pay-holiday-adj" step="0.01" value="0" oninput="calculateSalarySlipLive()" style="width: 130px; text-align: right; padding: 0.25rem;">
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #cbd5e1; padding-top: 4px;">
+                <span>Regular Overtime: <input type="number" id="pay-ot-hrs" placeholder="Hrs" style="width: 55px; text-align: center; padding: 2px;" value="0" oninput="calculateSalarySlipLive()"></span>
+                <input type="number" id="pay-ot-amt" step="0.01" value="0" oninput="calculateSalarySlipLive()" style="width: 130px; text-align: right; padding: 0.25rem;">
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Special Holiday:</span>
+                <input type="number" id="pay-special-holiday" step="0.01" value="0" oninput="calculateSalarySlipLive()" style="width: 130px; text-align: right; padding: 0.25rem;">
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Legal Holiday:</span>
+                <input type="number" id="pay-legal-holiday" step="0.01" value="0" oninput="calculateSalarySlipLive()" style="width: 130px; text-align: right; padding: 0.25rem;">
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Night Differential (10PM-6AM): <input type="number" id="pay-night-diff-hrs" placeholder="Hrs" style="width: 55px; text-align: center; padding: 2px;" value="0" oninput="onNightDiffHoursChange()"></span>
+                <input type="number" id="pay-night-diff" step="0.01" value="0" oninput="calculateSalarySlipLive()" style="width: 130px; text-align: right; padding: 0.25rem;">
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; background: #fee2e2; padding: 0.4rem; font-weight: 800; border-radius: 4px; margin-top: 4px;">
+                <span>Gross Earnings:</span>
+                <span id="pay-gross-display" style="color: #991b1b; font-size: 1rem;">₱0.00</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- DEDUCTIONS COLUMN -->
+          <div style="background: #ffffff; border: 1.5px solid #fecaca; border-radius: 0.5rem; overflow: hidden;">
+            <div style="background: #f87171; color: #fff; font-weight: 800; padding: 0.5rem 0.75rem; font-size: 0.9rem; display: flex; justify-content: space-between;">
+              <span>Deduction</span>
+              <span>Amount (₱)</span>
+            </div>
+            <div style="padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.85rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Restday (w/o Pay):</span>
+                <input type="number" id="pay-restday-wopay" step="0.01" value="0" oninput="calculateSalarySlipLive()" style="width: 130px; text-align: right; padding: 0.25rem;">
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Absences (w/o Pay):</span>
+                <input type="number" id="pay-absences-wopay" step="0.01" value="0" oninput="calculateSalarySlipLive()" style="width: 130px; text-align: right; padding: 0.25rem;">
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Tardiness / Undertime: <input type="number" id="pay-late-mins" placeholder="Mins" style="width: 60px; text-align: center; padding: 2px;" value="0" oninput="calculateSalarySlipLive()"></span>
+                <input type="number" id="pay-late-amt" step="0.01" value="0" oninput="calculateSalarySlipLive()" style="width: 130px; text-align: right; padding: 0.25rem;">
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span>SSS Contri Dec.1-5:</span>
+                <input type="number" id="pay-sss-dec" step="0.01" value="0" oninput="calculateSalarySlipLive()" style="width: 130px; text-align: right; padding: 0.25rem;">
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span>SSS Contribution:</span>
+                <input type="number" id="pay-sss-amt" step="0.01" value="0" oninput="calculateSalarySlipLive()" style="width: 130px; text-align: right; padding: 0.25rem;">
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span>SSS Loan:</span>
+                <input type="number" id="pay-sss-loan" step="0.01" value="0" oninput="calculateSalarySlipLive()" style="width: 130px; text-align: right; padding: 0.25rem;">
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span>HDMF (Pag-IBIG):</span>
+                <input type="number" id="pay-hdmf-amt" step="0.01" value="0" oninput="calculateSalarySlipLive()" style="width: 130px; text-align: right; padding: 0.25rem;">
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span>HDMF Loan:</span>
+                <input type="number" id="pay-hdmf-loan" step="0.01" value="0" oninput="calculateSalarySlipLive()" style="width: 130px; text-align: right; padding: 0.25rem;">
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span>PHIC (PhilHealth):</span>
+                <input type="number" id="pay-phic-amt" step="0.01" value="0" oninput="calculateSalarySlipLive()" style="width: 130px; text-align: right; padding: 0.25rem;">
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Withholding Tax:</span>
+                <input type="number" id="pay-tax-amt" step="0.01" value="0" oninput="calculateSalarySlipLive()" style="width: 130px; text-align: right; padding: 0.25rem;">
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Cash Advance:</span>
+                <input type="number" id="pay-ca-amt" step="0.01" value="0" oninput="calculateSalarySlipLive()" style="width: 130px; text-align: right; padding: 0.25rem;">
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span>HMO (Intellicare):</span>
+                <input type="number" id="pay-hmo-amt" step="0.01" value="0" oninput="calculateSalarySlipLive()" style="width: 130px; text-align: right; padding: 0.25rem;">
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; background: #fee2e2; padding: 0.4rem; font-weight: 800; border-radius: 4px; margin-top: 1.8rem;">
+                <span>Total Deduction:</span>
+                <span id="pay-deduct-display" style="color: #991b1b; font-size: 1rem;">₱0.00</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Cash Advance Summary & Net Pay -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; background: #fff1f2; border: 1.5px solid #fecaca; border-radius: 0.5rem; padding: 0.75rem; margin-bottom: 1rem;">
+          <div>
+            <b style="font-size: 0.85rem; color: #991b1b; display: block; margin-bottom: 0.35rem;">Summary of Cash Advance:</b>
+            <div style="display: flex; gap: 0.5rem;">
+              <input type="text" id="pay-ca-nopay" placeholder="No. of Pay" style="width: 30%; font-size: 0.8rem; padding: 0.25rem;">
+              <input type="number" id="pay-ca-summary-amt" placeholder="Amount" style="width: 35%; font-size: 0.8rem; padding: 0.25rem;">
+              <input type="number" id="pay-ca-balance" placeholder="Balance" style="width: 35%; font-size: 0.8rem; padding: 0.25rem;">
+            </div>
+          </div>
+          <div style="text-align: right; display: flex; flex-direction: column; justify-content: center;">
+            <div style="font-size: 0.9rem; font-weight: 800; color: #be123c;">NET PAY: <span id="pay-net-display" style="font-size: 1.6rem; color: #991b1b; margin-left: 0.5rem;">₱0.00</span></div>
+            <small id="pay-net-words" style="font-style: italic; color: #475569; font-weight: 600; margin-top: 2px;">Zero Pesos Only</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1.5px solid #e2e8f0; padding-top: 0.75rem; margin-top: 0.5rem;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closePayrollModal()">Kanselahin</button>
+        <div style="display: flex; gap: 0.5rem;">
+          <button type="button" class="btn btn-secondary" onclick="previewCurrentSalarySlipModal()">👁️ Preview Slip</button>
+          <button type="button" class="btn btn-primary" style="font-weight: 700;" onclick="saveSalarySlipRecord('Draft')">💾 I-save bilang Draft Payslip</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Add/Edit Vendor -->
+  <div id="admin-vendor-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 500px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; margin-bottom: 1rem;">
+        <h3 style="margin: 0; color: #1e293b;" id="vendor-modal-title">➕ Add Vendor</h3>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('admin-vendor-modal').style.display='none'">✕</button>
+      </div>
+      <input type="hidden" id="vendor-id">
+      <div class="form-group"><label>Vendor / Supplier Name</label><input type="text" id="vendor-name" placeholder="Hal: Shera Meat Supplies" required></div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group"><label>Contact Person</label><input type="text" id="vendor-contact-person" placeholder="Hal: Juan Dela Cruz"></div>
+        <div class="form-group"><label>Contact No. & Email</label><input type="text" id="vendor-contact-details" placeholder="Hal: 0917-000-0000"></div>
+      </div>
+      <div class="form-group"><label>Address</label><input type="text" id="vendor-address" placeholder="Hal: Quezon City"></div>
+      <div class="form-group"><label>Credit Terms</label><input type="text" id="vendor-terms" placeholder="Hal: Cash on Delivery / 7-Days"></div>
+      <button type="button" class="btn btn-primary" style="width: 100%; font-weight: 700;" onclick="saveVendor()">💾 Save Vendor</button>
+    </div>
+  </div>
+
+  <!-- Modal: Add/Edit Customer -->
+  <div id="admin-customer-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 500px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; margin-bottom: 1rem;">
+        <h3 style="margin: 0; color: #1e293b;" id="customer-modal-title">➕ Add Customer</h3>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('admin-customer-modal').style.display='none'">✕</button>
+      </div>
+      <input type="hidden" id="customer-id">
+      <div class="form-group"><label>Customer Name</label><input type="text" id="customer-name" placeholder="Hal: Aling Nena Store" required></div>
+      <div class="form-group"><label>Address</label><input type="text" id="customer-address" placeholder="Hal: Phase 1 Subdivision"></div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group"><label>Contact No. / Email</label><input type="text" id="customer-contact" placeholder="Hal: 0917-111-2222"></div>
+        <div class="form-group"><label>Customer Type</label>
+          <select id="customer-type">
+            <option value="Retail">Retail</option>
+            <option value="Wholesale">Wholesale</option>
+            <option value="Reseller">Subdivision Reseller</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group"><label>Bank Acc / Payment Details</label><input type="text" id="customer-bank" placeholder="Hal: BDO - 123456789"></div>
+      <button type="button" class="btn btn-primary" style="width: 100%; font-weight: 700;" onclick="saveCustomer()">💾 Save Customer</button>
+    </div>
+  </div>
+
+
+  <!-- BIRTHDAY CELEBRANT ANIMATED POPUP MODAL -->
+  <div id="birthday-greeting-modal" class="modal-overlay" style="display: none; z-index: 10000; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px);">
+    <div class="modal-content bday-modal-container" style="max-width: 620px; width: 95%; max-height: 90vh; overflow-y: auto; position: relative; border-radius: 1.25rem; background: linear-gradient(135deg, #fffbeb 0%, #ffffff 50%, #fef3c7 100%); border: 3px solid #f59e0b; box-shadow: 0 25px 50px -12px rgba(245, 158, 11, 0.4); padding: 2rem 1.5rem; text-align: center;">
+      
+      <!-- CSS Floating Balloons & Confetti -->
+      <div class="bday-balloon bday-balloon-1">🎈</div>
+      <div class="bday-balloon bday-balloon-2">🎈</div>
+      <div class="bday-balloon bday-balloon-3">🎈</div>
+      <div class="bday-balloon bday-balloon-4">🎉</div>
+      <div class="bday-balloon bday-balloon-5">✨</div>
+
+      <!-- Animated Animated Banner Header -->
+      <div style="margin-bottom: 1.25rem;">
+        <div class="bday-banner-ribbon">
+          <span style="display: inline-block; animation: bdayBounce 1.5s infinite;">🎂</span> 
+          HAPPY BIRTHDAY! 
+          <span style="display: inline-block; animation: bdayBounce 1.5s infinite 0.3s;">🎉</span>
+        </div>
+        <p style="font-size: 0.95rem; color: #78350f; font-weight: 600; margin-top: 0.5rem; text-shadow: 0 1px 2px rgba(255,255,255,0.8);">
+          Isang taos-pusong pagbati mula sa buong pamunuan at pamilya ng kumpanya!
+        </p>
+      </div>
+
+      <!-- Cards Container for Celebrants -->
+      <div id="birthday-celebrants-cards" style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem;">
+        <!-- Dynamic Celebrant Cards injected by JS -->
+      </div>
+
+      <!-- Bottom Button -->
+      <div style="margin-top: 1rem; position: relative; z-index: 5;">
+        <button type="button" class="btn btn-warning" style="font-weight: 800; font-size: 1rem; padding: 0.65rem 2.5rem; border-radius: 9999px; box-shadow: 0 4px 14px rgba(217, 119, 6, 0.4); border: none; cursor: pointer; color: #78350f; background: linear-gradient(135deg, #fcd34d 0%, #f59e0b 100%); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" onclick="closeBirthdayModal()">
+          🎊 Maraming Salamat & Magdiwang! 🎊
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    @keyframes bdayFloat {
+      0% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-18px) rotate(8deg); }
+      100% { transform: translateY(0px) rotate(0deg); }
+    }
+    @keyframes bdayBounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    @keyframes bdayGlow {
+      0%, 100% { box-shadow: 0 0 15px rgba(245, 158, 11, 0.5); }
+      50% { box-shadow: 0 0 30px rgba(245, 158, 11, 0.9); }
+    }
+    @keyframes bannerShimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    .bday-modal-container {
+      overflow: hidden !important;
+    }
+    .bday-balloon {
+      position: absolute;
+      font-size: 2.2rem;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0.85;
+      animation: bdayFloat 3.5s ease-in-out infinite;
+    }
+    .bday-balloon-1 { top: 10px; left: 15px; animation-delay: 0s; }
+    .bday-balloon-2 { top: 20px; right: 20px; animation-delay: 1s; }
+    .bday-balloon-3 { bottom: 25px; left: 20px; animation-delay: 1.8s; }
+    .bday-balloon-4 { bottom: 20px; right: 25px; animation-delay: 0.5s; }
+    .bday-balloon-5 { top: 50%; right: 10px; animation-delay: 2.3s; font-size: 1.6rem; }
+
+    .bday-banner-ribbon {
+      display: inline-block;
+      background: linear-gradient(90deg, #d97706, #f59e0b, #fbbf24, #f59e0b, #d97706);
+      background-size: 200% 100%;
+      animation: bannerShimmer 3s infinite linear;
+      color: #ffffff;
+      font-size: 1.5rem;
+      font-weight: 900;
+      letter-spacing: 1px;
+      padding: 0.5rem 1.75rem;
+      border-radius: 9999px;
+      box-shadow: 0 6px 20px rgba(217, 119, 6, 0.4);
+      text-transform: uppercase;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.25);
+    }
+
+    .celebrant-card {
+      background: #ffffff;
+      border: 2px solid #fde68a;
+      border-radius: 1rem;
+      padding: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      text-align: left;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+      position: relative;
+      z-index: 4;
+      animation: bdayGlow 3s infinite;
+    }
+    .celebrant-avatar {
+      width: 85px;
+      height: 85px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #f59e0b;
+      box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3);
+      flex-shrink: 0;
+      background: #fff;
+    }
+    .celebrant-avatar-placeholder {
+      width: 85px;
+      height: 85px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #fef3c7, #fde68a);
+      color: #b45309;
+      font-weight: 900;
+      font-size: 2.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 3px solid #f59e0b;
+      box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3);
+      flex-shrink: 0;
+    }
+    .celebrant-name {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #1e293b;
+      margin: 0;
+      line-height: 1.2;
+    }
+    .celebrant-role {
+      font-size: 0.85rem;
+      color: #059669;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+    .celebrant-badge-box {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 0.6rem;
+    }
+    .celebrant-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 0.25rem 0.65rem;
+      border-radius: 0.375rem;
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fcd34d;
+    }
+  </style>
+
+
+  <!-- Modal: Recipe Builder (BOM) -->
+  <div id="recipe-builder-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 700px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; margin-bottom: 1rem;">
+        <h3 style="margin: 0; color: #1e293b;">🍳 Recipe Builder (Bill of Materials)</h3>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('recipe-builder-modal').style.display='none'">✕</button>
+      </div>
+      <div class="form-group">
+        <label>Finished Good Name (Pangalan ng Mabubuong Recipe):</label>
+        <input type="text" id="bom-finished-good" list="bom-fg-list" placeholder="Hal: Gyoza Wrapper (I-type ang bago o pumili sa listahan)" style="width: 100%; padding: 0.6rem; border: 2px solid #3b82f6; border-radius: 4px; font-weight: 600; color: #1e40af;">
+        <datalist id="bom-fg-list"></datalist>
+        <small style="color: #059669; display: block; margin-top: 4px; font-weight: 600;">✨ TIP: Kung magta-type ka ng bagong pangalan na wala pa sa listahan, awtomatiko itong gagawin ng system na "Bagong Produkto" para pwede agad itong orderin ng mga branch!</small>
+      </div>
+      <div class="form-group">
+        <label>Recipe / Batch Yield Qty (Output):</label>
+        <input type="number" id="bom-yield-qty" value="1" min="1" placeholder="Ilang piraso/box ang magagawa ng isang timpla?">
+        <div style="background: #ecfdf5; border-left: 4px solid #10b981; padding: 0.5rem; margin-top: 0.5rem; font-size: 0.8rem; color: #065f46; border-radius: 4px;">
+          <b>💡 PALIWANAG SA YIELDING:</b> Ang <i>Yielding</i> ay kung ilang piraso o set ang kayang magawa ng <b>ISANG BUONG TIMPLA</b> ng recipe na ito. <br><br>
+          <b>Halimbawa:</b> Kung gagawa ka ng recipe para sa 'Pork Siomai', at sa isang timpla (1 recipe) ay nakakagawa ka ng <b>50 piraso</b>, ilagay ang <b>50</b>. Kapag nag-start ka ng production at pinili mong gumawa ng "2 Batches", automatic i-mu-multiply ng system ang mga sangkap sa dalawa at mag-a-add ng 100 piraso (50 x 2) sa inventory mo.
+        </div>
+      </div>
+      
+      <div style="background: #f8fafc; border: 1px solid #cbd5e1; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+        <b style="display: block; margin-bottom: 0.5rem; color: #0284c7;">➕ Mga Sangkap (Raw Materials Needed)</b>
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+          <input type="text" id="bom-rm-select" list="bom-rm-list" placeholder="-- Search Sangkap --" style="flex: 2; padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 4px;">
+          <datalist id="bom-rm-list"></datalist>
+          <input type="number" id="bom-rm-qty" placeholder="Qty Needed" style="flex: 1; padding: 0.5rem;" min="0.01" step="0.01">
+          <select id="bom-rm-uom" style="flex: 1; padding: 0.5rem;">
+            <option value="Whole">Whole</option>
+            <option value="Loose">Loose</option>
+          </select>
+          <button class="btn btn-primary" onclick="addIngredientToBOM()">Add</button>
+        </div>
+        <div class="table-responsive">
+          <table>
+            <thead><tr><th>Sangkap</th><th>Dami (Qty)</th><th>Aksyon</th></tr></thead>
+            <tbody id="bom-ingredients-tbody"><tr><td colspan="3" style="text-align:center; color:#94a3b8;">Walang sangkap.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <button class="btn btn-success" style="width: 100%; font-weight: bold;" onclick="saveRecipeBOM()">💾 I-save ang Recipe (BOM)</button>
+    </div>
+  </div>
+
+  <!-- Modal: Work Order (Production) -->
+  <div id="work-order-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 500px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; margin-bottom: 1rem;">
+        <h3 style="margin: 0; color: #0284c7;">⚙️ Start Production (Work Order)</h3>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('work-order-modal').style.display='none'">✕</button>
+      </div>
+      <div class="form-group">
+        <label>Pumili ng Gagawing Produkto (Naka-set na BOM):</label>
+        <input type="text" id="wo-bom-select" list="wo-bom-list" style="width: 100%; padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 4px;" placeholder="-- Search Recipe --" onchange="previewWorkOrder()">
+        <datalist id="wo-bom-list"></datalist>
+      </div>
+      <div class="form-group">
+        <label>Multiplier (Ilang Batches ang Gagawin?):</label>
+        <input type="number" id="wo-multiplier" value="1" min="1" oninput="previewWorkOrder()" style="font-weight:bold; font-size: 1.1rem;">
+      </div>
+      <div id="wo-preview-box" style="background: #eff6ff; border: 1px solid #93c5fd; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; font-size: 0.9rem;">
+        <b style="color: #1e40af;">Produksyon Output:</b> <span id="wo-projected-yield">--</span><br><br>
+        <b style="color: #991b1b;">Ibabawas sa Imbentaryo (Raw Materials):</b>
+        <ul id="wo-projected-rm" style="margin-left: 1.25rem; margin-top: 0.25rem;"></ul>
+      </div>
+      <button class="btn btn-primary" style="width: 100%; font-weight: bold; font-size: 1.05rem;" onclick="executeWorkOrder()">🚀 Execute Work Order (Deduct Stocks)</button>
+    </div>
+  </div>
+
+  <!-- Modal: Asset Management -->
+  <div id="asset-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 500px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; margin-bottom: 1rem;">
+        <h3 style="margin: 0; color: #1e293b;" id="asset-modal-title">➕ Add Asset / Equipment</h3>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('asset-modal').style.display='none'">✕</button>
+      </div>
+      <input type="hidden" id="asset-id">
+      <div class="form-group"><label>Asset Code / Plate No.</label><input type="text" id="asset-code" placeholder="Hal: TRUCK-001 o NBD-1234"></div>
+      <div class="form-group"><label>Equipment / Asset Name</label><input type="text" id="asset-name" placeholder="Hal: L300 Delivery Van"></div>
+      <div class="form-group"><label>Assigned Location / Hub</label><input type="text" id="asset-location" placeholder="Hal: Commissary Plant"></div>
+      <div class="form-group"><label>Next Preventive Maintenance Due</label><input type="date" id="asset-maintenance"></div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="asset-status">
+          <option value="Operational">Operational / Good</option>
+          <option value="Under Repair">Under Repair</option>
+          <option value="Decommissioned">Decommissioned</option>
+        </select>
+      </div>
+      <button class="btn btn-success" style="width: 100%; font-weight: bold;" onclick="saveAsset()">💾 Save Asset</button>
+    </div>
+  </div>
+
+  <!-- Modal: Lot Tracing -->
+  <div id="lot-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 450px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; margin-bottom: 1rem;">
+        <h3 style="margin: 0; color: #1e293b;">📅 Tag Lot Expiration</h3>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('lot-modal').style.display='none'">✕</button>
+      </div>
+      <div class="form-group">
+        <label>Product / Raw Material</label>
+        <select id="lot-product-select"></select>
+      </div>
+      <div class="form-group"><label>Lot / Batch Number</label><input type="text" id="lot-number" placeholder="Hal: LOT-2026-10A"></div>
+      <div class="form-group"><label>Quantity (Units in this Lot)</label><input type="number" id="lot-qty" value="1"></div>
+      <div class="form-group"><label>Expiration Date</label><input type="date" id="lot-expiry"></div>
+      <button class="btn btn-primary" style="width: 100%; font-weight: bold;" onclick="saveLotRecord()">💾 Save Expiry Tag</button>
+    </div>
+  </div>
+
+</main>
+  <canvas id="temp-po-barcode" style="display:none;"></canvas>
+  </div>
+</body>
+</html>
