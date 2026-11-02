@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Branch Operations - KusinaERP</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="#" class="brand" style="display: flex; align-items: center; gap: 8px;">
+      <span class="default-brand-icon" style="font-size: 1.4rem;">🍳</span>
+      <span id="brand-header-title">KusinaERP</span> <span>Branch Ops</span>
+    </a>
+    <div class="user-info" style="display: flex; align-items: center; gap: 0.75rem;">
+      <div onclick="openBranchProfileModal()" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+        <img class="user-avatar-img" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid #10b981; display: none;" />
+        <div class="user-avatar-initials" style="width: 32px; height: 32px; border-radius: 50%; background: #10b981; color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center;">B</div>
+        <span class="badge badge-branch" id="user-display">Branch</span>
+      </div>
+      <div style="position: relative;">
+        <button class="btn btn-secondary btn-sm" id="btn-branch-dots" onclick="toggleBranchMenu()" style="font-size: 1.25rem; line-height: 1; padding: 0.25rem 0.6rem;">⋮</button>
+        <div id="branch-dropdown-menu" style="display: none; position: absolute; right: 0; top: 110%; background: #fff; border: 1px solid #cbd5e1; border-radius: 0.5rem; box-shadow: 0 8px 20px rgba(0,0,0,0.15); width: 260px; z-index: 100;">
+          <a href="javascript:void(0)" onclick="switchBranchView('dashboard')" style="display: block; padding: 0.75rem 1rem; border-bottom: 1px solid #f1f5f9;">📊 Dashboard</a>
+          <a href="javascript:void(0)" onclick="switchBranchView('order')" style="display: block; padding: 0.75rem 1rem; border-bottom: 1px solid #f1f5f9;">🛒 Place Order</a>
+          <a href="javascript:void(0)" onclick="switchBranchView('deliveries')" style="display: block; padding: 0.75rem 1rem; border-bottom: 1px solid #f1f5f9;">🚚 My Deliveries</a>
+          <a href="javascript:void(0)" onclick="openBranchProfileModal()" style="display: block; padding: 0.75rem 1rem; color: #2563eb; font-weight: 600; border-bottom: 1px solid #f1f5f9;">👤 Edit Profile</a>
+          <a href="javascript:void(0)" onclick="logoutUser()" style="display: block; padding: 0.75rem 1rem; color: #ef4444; font-weight: 600;">🚪 Logout</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div id="view-branch-dashboard" class="branch-view-section">
+      <div class="card">
+         <div class="card-title">📊 Branch Analytics</div>
+         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+            <div style="background: #f8fafc; border-left: 4px solid #2563eb; padding: 1rem;">Total Orders: <b id="br-kpi-total-orders">0</b></div>
+            <div style="background: #f8fafc; border-left: 4px solid #10b981; padding: 1rem;">Success: <b id="br-kpi-success-orders">0</b></div>
+            <div style="background: #f8fafc; border-left: 4px solid #ef4444; padding: 1rem;">Disputes: <b id="br-kpi-dispute-orders">0</b></div>
+            <div style="background: #f8fafc; border-left: 4px solid #f59e0b; padding: 1rem;">Total Spend: <b id="br-kpi-total-spend">0</b></div>
+         </div>
+      </div>
+    </div>
+
+    <!-- MAIN ORDERING PAGE -->
+    <div id="view-branch-order" class="branch-view-section" style="display: none;">
+      <div class="card">
+        <div class="card-title">
+          <span>🛒 Create New Order</span>
+          <button class="btn btn-primary" onclick="openOrderModal()">➕ Start Order</button>
+        </div>
+        <div id="branch-order-summary-box" style="display:none; margin-top: 1rem;">
+          <h4 style="margin:0 0 0.5rem 0;">Bumubuo ng Order...</h4>
+          <span id="summary-delivery-date-badge" class="badge badge-warning" style="margin-bottom: 0.5rem; display: inline-block;"></span>
+          <table style="width:100%; font-size: 0.9rem;">
+            <tbody id="cart-summary-tbody"></tbody>
+          </table>
+          <div style="text-align: right; margin-top: 1rem; border-top: 2px solid #ccc; padding-top: 0.5rem;">
+             <b>Grand Total (<span id="cart-item-count">0</span> items):</b> <span id="cart-summary-grand-total" style="font-size: 1.25rem; font-weight: 800; color: #b91c1c;">₱0.00</span>
+             <br><small id="cart-summary-details" style="color:#64748b;"></small>
+          </div>
+          <button class="btn btn-success" style="width: 100%; margin-top: 1rem;" onclick="submitBranchOrder()">✅ SUBMIT ORDER SA COMMISSARY</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="view-branch-deliveries" class="branch-view-section" style="display: none;">
+      <div class="card">
+        <div class="card-title">🚚 My Deliveries</div>
+        <div class="table-responsive">
+          <table>
+            <thead><tr><th>PO Number</th><th>Items</th><th>Amount</th><th>Status</th><th>Aksyon</th></tr></thead>
+            <tbody id="branch-deliveries-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ORDER MODAL (BRANCH) -->
+  <div id="make-order-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem;">
+        <h3 style="margin:0;">🛒 Place Order</h3>
+        <button class="btn btn-secondary btn-sm" onclick="closeOrderModal()">✕</button>
+      </div>
+
+      <!-- Agent Mode Details -->
+      <div style="background: #f8fafc; padding: 1rem; border-radius: 4px; margin-top: 1rem; border: 1px solid #cbd5e1;">
+        <h4 style="margin:0 0 0.5rem 0;">1. Order Details & Agent Setup</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+           <div class="form-group" style="margin:0;">
+             <label>Customer (Agent Mode):</label>
+             <select id="order-customer"><option value="">-- Piliin ang Customer --</option></select>
+           </div>
+           <div class="form-group" style="margin:0;">
+             <label>Target Delivery Date:</label>
+             <input type="date" id="order-target-date" onchange="onDeliveryDateSelected()">
+           </div>
+           <div class="form-group" style="margin:0;">
+             <label>Discount Option:</label>
+             <select id="order-discount" onchange="renderCartBoxes()">
+               <option value="0">Walang Discount (0%)</option>
+               <option value="5">5% Discount</option>
+               <option value="10">10% Discount</option>
+               <option value="15">15% Discount</option>
+               <option value="20">20% Discount</option>
+               <option value="50">50% Discount</option>
+               <option value="100">100% Complimentary (Libre)</option>
+             </select>
+           </div>
+           <div class="form-group" style="margin:0;">
+             <label>VAT Option:</label>
+             <select id="order-vat" onchange="renderCartBoxes()">
+               <option value="inclusive">VAT Inclusive</option>
+               <option value="exclusive">VAT Exclusive (Added to Total)</option>
+               <option value="exempt">VAT Exempt (0%)</option>
+             </select>
+           </div>
+        </div>
+        <button class="btn btn-primary" id="btn-proceed-catalog" disabled style="margin-top: 1rem;" onclick="proceedToCatalog()">Proceed to Catalog ➔</button>
+        <span id="date-selected-badge" class="badge badge-warning" style="display:none; margin-left: 10px;"></span>
+      </div>
+
+      <!-- Catalog Section -->
+      <div id="step-catalog-section" style="display: none; margin-top: 1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+          <h4 style="margin:0;">2. Select Products</h4>
+          <button class="btn btn-primary btn-sm" onclick="openCameraBarcodeScanner('branch_catalog')">📷 Scan</button>
+        </div>
+        <input type="text" id="catalog-search-input" placeholder="Mag-search ng produkto..." oninput="filterCatalogProducts()" style="width:100%; padding:0.5rem; margin-bottom:1rem;">
+        <div id="catalog-products-list" style="max-height: 250px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 4px; margin-bottom: 1rem;"></div>
+        
+        <!-- Fillup Box -->
+        <div id="selected-product-fillup" style="display: none; background: #e0f2fe; padding: 1rem; border-radius: 4px; border: 2px solid #3b82f6; margin-bottom: 1rem;">
+           <b id="fillup-item-name" style="font-size: 1.1rem; color: #1e40af;"></b>
+           <span id="fillup-station-name" class="badge badge-admin"></span>
+           <div id="fillup-item-codes" style="font-size: 0.8rem; color: #475569; margin-top: 4px;"></div>
+           <div id="guide-whole-uom" style="display:none;"></div>
+           <div id="guide-loose-uom" style="display:none;"></div>
+           <div id="guide-whole-rate" style="display:none;"></div>
+           <div id="guide-loose-rate" style="display:none;"></div>
+           <div id="guide-conversion-text" style="display:none;"></div>
+           
+           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
+             <div>
+               <label id="fillup-whole-label"></label>
+               <input type="number" id="fillup-whole-qty" value="0" step="0.5" oninput="calculateFillupSubtotal()">
+             </div>
+             <div>
+               <label id="fillup-loose-label"></label>
+               <input type="number" id="fillup-loose-qty" value="0" step="0.5" oninput="calculateFillupSubtotal()">
+             </div>
+           </div>
+           
+           <div style="display:none;">
+             <span id="fillup-packaging-tip"></span>
+           </div>
+           
+           <div style="text-align: right; margin-top: 1rem; font-size: 1.25rem; font-weight: bold;">
+             Subtotal: <span id="fillup-subtotal-text" style="color: #b91c1c;">₱0.00</span>
+           </div>
+           <button class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;" onclick="confirmAddSelectedToCart()">I-add sa Cart</button>
+        </div>
+
+        <!-- Cart Box -->
+        <div id="modal-cart-box" style="display: none; background: #f8fafc; padding: 1rem; border: 1px dashed #cbd5e1; border-radius: 4px;">
+           <h4 style="margin: 0 0 0.5rem 0;">🛒 My Basket (<span id="modal-cart-count-badge"></span>)</h4>
+           <table style="width: 100%; font-size: 0.9rem;">
+             <tbody id="modal-cart-tbody"></tbody>
+           </table>
+           <div style="text-align: right; margin-top: 1rem; font-size: 1.25rem; font-weight: 800;">
+             Total: <span id="modal-cart-total-text" style="color: #b91c1c;"></span>
+           </div>
+           <button class="btn btn-success" style="width:100%; margin-top:0.5rem;" onclick="submitBranchOrderFromModal()">✅ Submit Order</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ALL OTHER MODALS STUBS NEEDED BY APP.JS -->
+  <div id="branch-profile-modal" class="modal-overlay" style="display: none;"></div>
+  <div id="investigation-modal" class="modal-overlay" style="display: none;"></div>
+  <div id="branch-late-return-modal" class="modal-overlay" style="display: none;"></div>
+  <div id="branch-cancel-order-modal" class="modal-overlay" style="display: none;"></div>
+  <div id="branch-pahabol-modal" class="modal-overlay" style="display: none;"></div>
+  <div id="branch-scan-confirm-modal" class="modal-overlay" style="display: none;"></div>
+  <div id="branch-receiving-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 600px;">
+       <h3 id="br-recv-order-id"></h3>
+       <div id="br-stage-arrival"></div>
+       <div id="br-stage-checklist"></div>
+       <div id="br-stage-sign"></div>
+       <div id="branch-receiving-items-container"></div>
+       <div id="branch-dispute-alert-box"></div>
+       <canvas id="br-recv-sig-canvas"></canvas>
+       <input id="br-recv-driver-name">
+       <input id="br-recv-receiver-name">
+       <input id="branch-incident-notes">
+       <button onclick="submitFinalReceivingProof()">Save</button>
+    </div>
+  </div>
+  <div id="barcode-scanner-modal" class="modal-overlay" style="display:none;"><div id="barcode-reader-box"></div></div>
+
+  <script src="app.js"></script>
+
+  <!-- BIRTHDAY CELEBRANT ANIMATED POPUP MODAL -->
+  <div id="birthday-greeting-modal" class="modal-overlay" style="display: none; z-index: 10000; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px);">
+    <div class="modal-content bday-modal-container" style="max-width: 620px; width: 95%; max-height: 90vh; overflow-y: auto; position: relative; border-radius: 1.25rem; background: linear-gradient(135deg, #fffbeb 0%, #ffffff 50%, #fef3c7 100%); border: 3px solid #f59e0b; box-shadow: 0 25px 50px -12px rgba(245, 158, 11, 0.4); padding: 2rem 1.5rem; text-align: center;">
+      
+      <!-- CSS Floating Balloons & Confetti -->
+      <div class="bday-balloon bday-balloon-1">🎈</div>
+      <div class="bday-balloon bday-balloon-2">🎈</div>
+      <div class="bday-balloon bday-balloon-3">🎈</div>
+      <div class="bday-balloon bday-balloon-4">🎉</div>
+      <div class="bday-balloon bday-balloon-5">✨</div>
+
+      <!-- Animated Animated Banner Header -->
+      <div style="margin-bottom: 1.25rem;">
+        <div class="bday-banner-ribbon">
+          <span style="display: inline-block; animation: bdayBounce 1.5s infinite;">🎂</span> 
+          HAPPY BIRTHDAY! 
+          <span style="display: inline-block; animation: bdayBounce 1.5s infinite 0.3s;">🎉</span>
+        </div>
+        <p style="font-size: 0.95rem; color: #78350f; font-weight: 600; margin-top: 0.5rem; text-shadow: 0 1px 2px rgba(255,255,255,0.8);">
+          Isang taos-pusong pagbati mula sa buong pamunuan at pamilya ng kumpanya!
+        </p>
+      </div>
+
+      <!-- Cards Container for Celebrants -->
+      <div id="birthday-celebrants-cards" style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem;">
+        <!-- Dynamic Celebrant Cards injected by JS -->
+      </div>
+
+      <!-- Bottom Button -->
+      <div style="margin-top: 1rem; position: relative; z-index: 5;">
+        <button type="button" class="btn btn-warning" style="font-weight: 800; font-size: 1rem; padding: 0.65rem 2.5rem; border-radius: 9999px; box-shadow: 0 4px 14px rgba(217, 119, 6, 0.4); border: none; cursor: pointer; color: #78350f; background: linear-gradient(135deg, #fcd34d 0%, #f59e0b 100%); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" onclick="closeBirthdayModal()">
+          🎊 Maraming Salamat & Magdiwang! 🎊
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    @keyframes bdayFloat {
+      0% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-18px) rotate(8deg); }
+      100% { transform: translateY(0px) rotate(0deg); }
+    }
+    @keyframes bdayBounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    @keyframes bdayGlow {
+      0%, 100% { box-shadow: 0 0 15px rgba(245, 158, 11, 0.5); }
+      50% { box-shadow: 0 0 30px rgba(245, 158, 11, 0.9); }
+    }
+    @keyframes bannerShimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    .bday-modal-container {
+      overflow: hidden !important;
+    }
+    .bday-balloon {
+      position: absolute;
+      font-size: 2.2rem;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0.85;
+      animation: bdayFloat 3.5s ease-in-out infinite;
+    }
+    .bday-balloon-1 { top: 10px; left: 15px; animation-delay: 0s; }
+    .bday-balloon-2 { top: 20px; right: 20px; animation-delay: 1s; }
+    .bday-balloon-3 { bottom: 25px; left: 20px; animation-delay: 1.8s; }
+    .bday-balloon-4 { bottom: 20px; right: 25px; animation-delay: 0.5s; }
+    .bday-balloon-5 { top: 50%; right: 10px; animation-delay: 2.3s; font-size: 1.6rem; }
+
+    .bday-banner-ribbon {
+      display: inline-block;
+      background: linear-gradient(90deg, #d97706, #f59e0b, #fbbf24, #f59e0b, #d97706);
+      background-size: 200% 100%;
+      animation: bannerShimmer 3s infinite linear;
+      color: #ffffff;
+      font-size: 1.5rem;
+      font-weight: 900;
+      letter-spacing: 1px;
+      padding: 0.5rem 1.75rem;
+      border-radius: 9999px;
+      box-shadow: 0 6px 20px rgba(217, 119, 6, 0.4);
+      text-transform: uppercase;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.25);
+    }
+
+    .celebrant-card {
+      background: #ffffff;
+      border: 2px solid #fde68a;
+      border-radius: 1rem;
+      padding: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      text-align: left;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+      position: relative;
+      z-index: 4;
+      animation: bdayGlow 3s infinite;
+    }
+    .celebrant-avatar {
+      width: 85px;
+      height: 85px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #f59e0b;
+      box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3);
+      flex-shrink: 0;
+      background: #fff;
+    }
+    .celebrant-avatar-placeholder {
+      width: 85px;
+      height: 85px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #fef3c7, #fde68a);
+      color: #b45309;
+      font-weight: 900;
+      font-size: 2.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 3px solid #f59e0b;
+      box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3);
+      flex-shrink: 0;
+    }
+    .celebrant-name {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #1e293b;
+      margin: 0;
+      line-height: 1.2;
+    }
+    .celebrant-role {
+      font-size: 0.85rem;
+      color: #059669;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+    .celebrant-badge-box {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 0.6rem;
+    }
+    .celebrant-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 0.25rem 0.65rem;
+      border-radius: 0.375rem;
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fcd34d;
+    }
+  </style>
+
+</body>
+</html>
