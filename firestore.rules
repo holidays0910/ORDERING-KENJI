@@ -1,0 +1,145 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function: Tiyaking naka-login ang user
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    // Helper function: Kunin ang role ng user mula sa 'users' collection gamit ang email
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.token.email.lower())).data.role;
+    }
+    
+    function getUserStatus() {
+      return get(/databases/$(database)/documents/users/$(request.auth.token.email.lower())).data.status;
+    }
+    
+    function isActiveUser() {
+      return isSignedIn() && getUserStatus() == 'active';
+    }
+    
+    function isAdmin() {
+      return isActiveUser() && (getUserRole() == 'admin' || getUserRole() == 'head');
+    }
+    
+    function isCommissary() {
+      return isActiveUser() && (getUserRole() == 'commissary' || isAdmin());
+    }
+    
+    function isBranch() {
+      return isActiveUser() && (getUserRole() == 'branch' || isCommissary());
+    }
+
+    // 1. USERS COLLECTION:
+    // - Lahat ng naka-login ay puwedeng magbasa para sa system displays
+    // - Ang sariling account ay puwedeng mag-update ng profile (name, address, photoUrl)
+    // - Admin LAMANG ang puwedeng magpalit ng 'role' at 'status'
+    match /users/{email} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isAdmin() || (
+        isSignedIn() && 
+        request.auth.token.email.lower() == email && 
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'status'])
+      );
+      allow delete: if isAdmin();
+    }
+
+    // 2. PRODUCTS COLLECTION (Product Master & Inventory):
+    // - Mababasa ng lahat ng aktibong users (Branch, Commissary, Admin)
+    // - Commissary at Admin lang ang may pahintulot magbago ng presyo o stock
+    match /products/{productId} {
+      allow read: if isActiveUser();
+      allow write: if isCommissary();
+    }
+
+    // 3. STOCK MOVEMENTS (Audit Trail ng Imbentaryo):
+    // - Pwedeng basahin ng aktibong user
+    // - Pwedeng magtala (create) ang Commissary o Admin sa dispatch, cancel, receiving
+    // - BAWAL i-edit o burahin ang historical audit logs
+    match /stock_movements/{movementId} {
+      allow read: if isActiveUser();
+      allow create: if isCommissary();
+      allow update, delete: if false;
+    }
+
+    // 4. ORDERS & DELIVERIES:
+    // - Branch: puwedeng gumawa ng bagong order at mag-update ng receiving checklist
+    // - Commissary/Admin: puwedeng magbago ng status (preparing, dispatch, cancel)
+    match /orders/{orderId} {
+      allow read: if isActiveUser();
+      allow create: if isBranch();
+      allow update: if isBranch() || isCommissary();
+      allow delete: if isAdmin();
+    }
+
+    // 5. VENDOR PURCHASE ORDERS (PO) & AP INVOICES:
+    match /vendor_pos/{poId} {
+      allow read: if isCommissary();
+      allow create, update: if isCommissary();
+      allow delete: if isAdmin();
+    }
+
+    // 6. FINANCIAL & GENERAL LEDGER:
+    // - Mahigpit na protektado para sa Head Office Admin lamang
+    match /general_ledger/{entryId} {
+      allow read, write: if isAdmin();
+    }
+    match /payrolls/{payrollId} {
+      allow read, write: if isAdmin();
+    }
+    match /employees/{employeeId} {
+      allow read, write: if isAdmin();
+    }
+    match /vendors/{vendorId} {
+      allow read: if isCommissary();
+      allow write: if isAdmin();
+    }
+    match /customers/{customerId} {
+      allow read: if isBranch();
+      allow write: if isAdmin();
+    }
+    match /system_settings/{settingId} {
+      allow read: if isActiveUser();
+      allow write: if isAdmin() || isCommissary();
+    }
+
+    // 7. BOM RECIPES, DISPUTES, SPOILAGE, AUDIT LOGS:
+    match /bom_recipes/{bomId} {
+      allow read: if isCommissary();
+      allow write: if isAdmin();
+    }
+    match /disputes/{disputeId} {
+      allow read: if isActiveUser();
+      allow create: if isBranch();
+      allow update, delete: if isAdmin();
+    }
+    match /spoilage_requests/{spoilageId} {
+      allow read: if isCommissary();
+      allow create: if isCommissary();
+      allow update, delete: if isAdmin();
+    }
+    match /activity_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isActiveUser();
+      allow update, delete: if false;
+    }
+    match /commissary_team/{memberId} {
+      allow read: if isCommissary();
+      allow write: if isAdmin();
+    }
+    match /storage_stations/{stationId} {
+      allow read: if isActiveUser();
+      allow write: if isCommissary();
+    }
+    match /uom_settings/{uomId} {
+      allow read: if isActiveUser();
+      allow write: if isCommissary();
+    }
+    match /product_backups/{backupId} {
+      allow read, write: if isAdmin();
+    }
+  }
+}
