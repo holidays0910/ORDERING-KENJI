@@ -1,0 +1,215 @@
+// ============================================================================
+// KUSINA ERP — FIRESTORE SECURITY RULES  (v2: may Access Control / Permissions)
+//
+// PAANO I-PUBLISH:  Firebase Console -> Firestore Database -> Rules -> i-paste -> Publish.
+// BAGO MAG-PUBLISH:
+//   1. KOPYAHIN MUNA ang kasalukuyang rules mo (para may babalikan).
+//   2. Gamitin ang "Rules Playground" sa console para subukan ang admin, commissary at branch account.
+//   3. Subukan sa test project kung maaari. Kapag may nabasag na screen, ibalik ang lumang rules.
+//
+// ANO ANG PINOPROTEKTAHAN:
+//   - Ang ROLE ay binabasa mula sa users/{email} sa Firestore (hindi sa browser).
+//   - Hindi makakapagbago ang user ng sarili niyang role / status / branch / permissions.
+//   - ACCESS CONTROL: ang Admin ang nagtatakda (per role at per user) kung anong module ang
+//     'none' | 'view' | 'edit'. Ginagamit din dito ang parehong setting:
+//        system_settings/access_control  ->  { roles: { commissary: {employees:'view', ...}, branch: {...} } }
+//        users/{email}.permissions        ->  { employees: 'edit', ... }   (nangingibabaw sa role)
+//     Ang Admin role ay laging buo ang access. Ang "users" at "truncate" ay Admin lang.
+//   - activity_logs, stock_movements, general_ledger = puwedeng dagdagan, hindi puwedeng baguhin/burahin.
+//
+// KILALANG LIMITASYON (susunod na hakbang):
+//   - Nababasa pa ng lahat ng aktibong user ang lahat ng orders (walang filter sa branch ang queries ngayon).
+//   - Ang pagkilala sa role ay ginagaya ang normalizeRole() ng app (may "admin/accounting/head" = admin).
+//   - Ang pinakaunang admin account ay kailangang gawin sa Firebase Console (users/{email}: role "admin",
+//     status "active"), dahil hindi na pinapayagan ang self-signup bilang active/admin.
+// ============================================================================
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- Pagkilala sa user at role (galing sa Firestore) ----------
+    function signedIn() { return request.auth != null && request.auth.token.email != null; }
+    function myEmail() { return request.auth.token.email.lower(); }
+    function myDocPath() { return /databases/$(database)/documents/users/$(myEmail()); }
+    function hasProfile() { return signedIn() && exists(myDocPath()); }
+    function me() { return get(myDocPath()).data; }
+    function active() { return hasProfile() && me().status == 'active'; }
+    function roleText() { return string(me().role).lower(); }
+
+    // Parehong pagkakasunod ng normalizeRole() sa app.js
+    function isAdmin() { return active() && roleText().matches('.*(admin|accounting|head).*'); }
+    function isCommissary() {
+      return active() && !roleText().matches('.*(admin|accounting|head).*')
+             && roleText().matches('.*(commi|kitchen|plant).*');
+    }
+    function isBranch() {
+      return active() && !roleText().matches('.*(admin|accounting|head).*')
+             && !roleText().matches('.*(commi|kitchen|plant).*')
+             && roleText().matches('.*(branch|store|outlet).*');
+    }
+    function isStaff() { return isAdmin() || isCommissary(); }
+
+    // ---------- ACCESS CONTROL (permissions na itinakda ni Admin) ----------
+    function accessPath() { return /databases/$(database)/documents/system_settings/access_control; }
+    function roleKey() { return isCommissary() ? 'commissary' : 'branch'; }
+    function roleLevel(m) {
+      return exists(accessPath()) && 'roles' in get(accessPath()).data
+             && roleKey() in get(accessPath()).data.roles
+             && m in get(accessPath()).data.roles[roleKey()]
+        ? get(accessPath()).data.roles[roleKey()][m] : 'none';
+    }
+    function userLevel(m) {
+      return 'permissions' in me() && m in me().permissions ? me().permissions[m] : null;
+    }
+    function level(m) { return userLevel(m) != null ? userLevel(m) : roleLevel(m); }
+    // Ang "users" at "truncate" ay hindi kailanman ipinagkakaloob (Admin lang)
+    function canView(m) { return isAdmin() || (active() && (level(m) == 'view' || level(m) == 'edit')); }
+    function canEdit(m) { return isAdmin() || (active() && level(m) == 'edit'); }
+
+    // Mga grupo ng module na nagbabago ng stock
+    function canStock() {
+      return isStaff() || canEdit('products') || canEdit('manufacturing') || canEdit('purchase_orders')
+             || canEdit('spoilage') || canEdit('lot_tracing');
+    }
+
+    // ---------- USERS ----------
+    match /users/{email} {
+      allow read: if signedIn() && (email == myEmail() || isAdmin());
+      // Bagong sign-up: sarili lang, hindi puwedeng active at hindi puwedeng admin
+      allow create: if signedIn() && email == myEmail()
+                    && request.resource.data.status != 'active'
+                    && !string(request.resource.data.role).lower().matches('.*(admin|accounting|head).*')
+                    && !('permissions' in request.resource.data);
+      // Sariling profile: hindi puwedeng baguhin ang role / status / branch / permissions
+      allow update: if signedIn() && email == myEmail()
+                    && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'status', 'branch', 'permissions']);
+      // Admin lang ang makakapag-approve, magbago ng role at permissions
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ---------- PRODUKTO AT BATAYANG DATA ----------
+    match /products/{id}            { allow read: if active(); allow write: if canStock(); }
+    // Puhunan: staff lang (HINDI nababasa ng branch)
+    match /product_costs/{id}       { allow read: if isStaff() || canView('products') || canView('manufacturing'); allow write: if isStaff() || canEdit('products') || canEdit('manufacturing'); }
+    match /storage_stations/{id}    { allow read: if active(); allow write: if isAdmin() || canEdit('stations'); }
+    match /uom_settings/{id}        { allow read: if active(); allow write: if isAdmin() || canEdit('stations'); }
+
+    // ---------- BRANCH INVENTORY ----------
+    match /product_photos/{id}          { allow read: if active(); allow write: if canStock(); }
+    match /companies/{id}               { allow read: if active(); allow write: if isAdmin() || canEdit('company_mgmt') || canEdit('branch_inv'); }
+    // Daily price history (may puhunan) at AR ledger: staff lang
+    match /price_history/{id}           { allow read: if isStaff() || canView('daily_prices'); allow create: if isStaff() || canEdit('daily_prices'); allow update, delete: if false; }
+    match /inventory_snapshots/{id}    { allow read: if isStaff() || canView('inv_totals'); allow create, update: if isStaff() || canEdit('inv_totals'); allow delete: if isAdmin(); }
+    match /ar_legacy/{id}               { allow read: if isStaff() || canView('ar_ledger'); allow create: if isStaff() || canEdit('ar_ledger'); allow update, delete: if isAdmin(); }
+    match /ar_accounts/{id}             { allow read: if isStaff() || canView('ar_ledger'); allow write: if isStaff() || canEdit('ar_ledger'); }
+    match /ar_payment_photos/{id}       { allow read: if isStaff() || canView('ar_ledger'); allow create: if isStaff() || canEdit('ar_ledger'); allow update, delete: if false; }
+    match /price_lists/{id}             { allow read: if active(); allow write: if isAdmin() || canEdit('price_lists') || canEdit('company_mgmt') || canEdit('products'); }
+    match /branch_stations/{id}         { allow read: if active(); allow write: if isAdmin() || canEdit('branch_inv'); }
+    match /inventory_branches/{id}      { allow read: if active(); allow write: if isAdmin() || canEdit('branch_inv'); }
+    match /inventory_items/{id}         { allow read: if active(); allow write: if isAdmin() || canEdit('branch_inv'); }
+    match /inventory_counts/{id} {
+      allow read: if active();
+      allow create: if isAdmin() || isBranch() || canEdit('branch_inv');
+      allow update: if isAdmin() || canEdit('branch_inv') || (isBranch() && resource.data.status != 'approved');
+      allow delete: if isAdmin();
+    }
+    match /inventory_item_requests/{id} {
+      allow read: if active();
+      allow create: if isAdmin() || isBranch() || isCommissary();
+      allow update: if isAdmin() || isCommissary() || canEdit('branch_inv');
+      allow delete: if isAdmin();
+    }
+    match /commissary_hubs/{id}     { allow read: if active(); allow write: if isAdmin() || canEdit('stations'); }
+    match /commissary_team/{id}     { allow read: if active(); allow write: if isStaff() || canEdit('team'); }
+    match /customers/{id} {
+      allow read: if active();
+      allow create, update: if active();
+      allow delete: if isAdmin() || canEdit('customers');
+    }
+    match /bom_recipes/{id} {
+      allow read: if isStaff() || canView('manufacturing') || canView('costing');
+      allow write: if isAdmin() || canEdit('manufacturing');
+    }
+    match /product_backups/{id} {
+      allow read: if canView('backups');
+      allow create: if canEdit('backups') || canEdit('products');
+      allow update, delete: if canEdit('backups');
+    }
+    match /product_logs/{id}        { allow read: if canView('logs'); allow create: if active(); }
+
+    // ---------- ORDERS AT DISPUTES ----------
+    match /orders/{id} {
+      allow read: if active();   // TODO: i-lock sa sariling branch kapag naayos na ang branch queries
+      allow create: if isStaff()
+                    || (isBranch() && request.resource.data.branchEmail.lower() == myEmail());
+      allow update: if isStaff() || canEdit('disputes')
+                    || (isBranch() && resource.data.branchEmail.lower() == myEmail());
+      allow delete: if isAdmin();
+    }
+    match /disputes/{id} {
+      allow read: if active();
+      allow create: if active();
+      allow update, delete: if isStaff() || canEdit('disputes');
+    }
+
+    // ---------- STOCK ----------
+    match /stock_movements/{id} {
+      allow read: if isStaff() || canView('products') || canView('logs');
+      allow create: if canStock();
+      allow update, delete: if false;      // tala ng galaw ng stock: hindi mababago
+    }
+    match /spoilage_requests/{id} {
+      allow read: if isStaff() || canView('spoilage');
+      allow create: if isStaff() || canEdit('spoilage');
+      allow update, delete: if isAdmin() || canEdit('spoilage');
+    }
+    match /inventory_lots/{id}      { allow read: if isStaff() || canView('lot_tracing'); allow write: if isStaff() || canEdit('lot_tracing'); }
+    match /assets/{id}              { allow read: if canView('assets'); allow write: if canEdit('assets'); }
+
+    // ---------- PERA / HR / VENDOR ----------
+    match /vendors/{id}             { allow read: if active(); allow write: if isAdmin() || canEdit('vendors'); }
+    match /vendor_pos/{id} {
+      allow read: if isStaff() || canView('purchase_orders') || canView('ap_invoices') || canView('auto_pr');
+      allow create: if isStaff() || canEdit('purchase_orders') || canEdit('auto_pr');
+      allow update, delete: if isAdmin() || canEdit('purchase_orders') || canEdit('ap_invoices');
+    }
+    match /general_ledger/{id} {
+      allow read: if canView('finance') || canView('ap_invoices') || canView('payroll');
+      allow create: if canEdit('finance') || canEdit('ap_invoices') || canEdit('payroll');
+      allow update, delete: if false;       // hindi binabago ang ledger; adjustment entry lang
+    }
+    match /employees/{id} {
+      allow read: if canView('employees') || canView('payroll');
+      allow write: if canEdit('employees');
+      // NBI, Police, Barangay, atbp. (litrato / PDF)
+      match /documents/{docId} {
+        allow read: if canView('employees');
+        allow write: if canEdit('employees');
+      }
+    }
+    match /payrolls/{id} {
+      allow read: if canView('payroll');
+      allow write: if canEdit('payroll');
+    }
+
+    // ---------- SETTINGS ----------
+    match /system_settings/{id} {
+      allow read: if active();              // branding, SI sequence, access_control, atbp.
+      allow write: if isAdmin()
+                   || (isCommissary() && id == 'invoice_sequence')
+                   || (id == 'branding' && canEdit('branding'))
+                   || (id == 'finance_balances' && canEdit('finance'));
+      // Ang 'access_control' ay Admin lang (isAdmin() sa itaas ang tanging nakakapag-sulat nito)
+    }
+
+    // ---------- AUDIT LOG ----------
+    match /activity_logs/{id} {
+      allow read: if canView('logs');
+      allow create: if active();
+      allow update, delete: if false;
+    }
+
+    // ---------- Lahat ng iba: bawal ----------
+    match /{document=**} { allow read, write: if false; }
+  }
+}
