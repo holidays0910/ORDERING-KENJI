@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Branch Operations - KusinaERP</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+</head>
+<body class="page-branch">
+    <aside class="sidebar" id="app-sidebar">
+    <div class="sidebar-header" onclick="toggleSidebar()" title="I-click para itago ang menu">
+      <img class="brand-logo-img" style="display: none;" alt="Logo" />
+      <span class="default-brand-icon" style="font-size: 1.6rem;">🍳</span>
+      <div class="brand-text-box">
+        <span id="brand-header-title">KusinaERP</span>
+        <span id="brand-header-subtitle">Branch Ops</span>
+      </div>
+    </div>
+    <nav class="sidebar-menu">
+      <div class="menu-category">Overview</div>
+      <a href="javascript:void(0)" onclick="switchBranchView('dashboard'); setActiveMenu(this)" class="menu-item active"><i>📊</i> Dashboard</a>
+      <div class="menu-category">Orders</div>
+      <a href="javascript:void(0)" onclick="switchBranchView('order'); setActiveMenu(this)" class="menu-item"><i>🛒</i> Place Order</a>
+      <a href="javascript:void(0)" onclick="switchBranchView('deliveries'); setActiveMenu(this)" class="menu-item"><i>🚚</i> My Deliveries</a>
+      <div class="menu-category">Branch Operations</div>
+      <a href="javascript:void(0)" onclick="switchBranchView('prime'); setActiveMenu(this)" class="menu-item"><i>💰</i> Prime Cost</a>
+      <a href="javascript:void(0)" onclick="switchBranchView('attendance'); setActiveMenu(this)" class="menu-item"><i>🕒</i> Attendance</a>
+      <a href="javascript:void(0)" onclick="switchBranchView('ordboard'); setActiveMenu(this)" class="menu-item"><i>📦</i> Order Board</a>
+      <a href="javascript:void(0)" onclick="switchBranchView('hrdocs'); setActiveMenu(this)" class="menu-item"><i>📚</i> HR Documents</a>
+      <a href="javascript:void(0)" onclick="switchBranchView('requests'); setActiveMenu(this)" class="menu-item"><i>🛠️</i> Mga Request (Repair/Bilhin)</a>
+      <a href="javascript:void(0)" onclick="switchBranchView('inventory'); setActiveMenu(this)" class="menu-item"><i>📋</i> Inventory Count</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-profile" onclick="openBranchProfileModal()">
+        <img class="user-avatar-img" style="display: none;" />
+        <div class="user-avatar-initials" style="background:#10b981;">B</div>
+        <div class="user-details"><span class="user-name" id="user-display">Branch</span><span class="user-role">Branch Ops</span></div>
+      </div>
+    </div>
+  </aside>
+  <div id="toast-container"></div>
+  <div class="main-wrapper">
+    <header class="top-header">
+      <div style="display: flex; align-items: center; gap: 15px;">
+        <button class="hamburger-btn" onclick="toggleSidebar()">☰</button>
+        <b style="color: #1e293b; font-size: 1.1rem; letter-spacing: -0.5px;">KusinaERP <span style="color: #10b981;">Branch Ops</span></b>
+      </div>
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <div onclick="openBranchProfileModal()" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+          <span style="font-weight: 600; font-size: 0.85rem; color: #475569;" id="top-user-display">Account</span>
+          <div class="user-avatar-initials" style="width: 32px; height: 32px; font-size: 0.85rem; background:#10b981;">B</div>
+          <img class="user-avatar-img" style="display: none; width: 32px; height: 32px;" />
+        </div>
+        <div class="dots-wrap">
+          <button class="btn btn-secondary btn-sm" id="btn-branch-dots" onclick="toggleBranchMenu()" style="font-size: 1.25rem; line-height: 1; padding: 0.25rem 0.6rem;" title="Profile at account">⋮</button>
+          <div id="branch-dropdown-menu" class="dots-menu">
+            <a class="dots-item" href="javascript:void(0)" onclick="openBranchProfileModal()">👤 Edit Profile</a>
+            <a class="dots-item danger" href="javascript:void(0)" onclick="logoutUser()">🚪 Logout</a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+
+  <div class="container main-content">
+    <div id="view-branch-dashboard" class="branch-view-section">
+      <div class="card">
+         <div class="card-title">📊 Branch Analytics</div>
+         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+            <div style="background: #f8fafc; border-left: 4px solid #2563eb; padding: 1rem;">Total Orders: <b id="br-kpi-total-orders">0</b></div>
+            <div style="background: #f8fafc; border-left: 4px solid #10b981; padding: 1rem;">Success: <b id="br-kpi-success-orders">0</b></div>
+            <div style="background: #f8fafc; border-left: 4px solid #ef4444; padding: 1rem;">Disputes: <b id="br-kpi-dispute-orders">0</b></div>
+            <div style="background: #f8fafc; border-left: 4px solid #f59e0b; padding: 1rem;">Total Spend: <b id="br-kpi-total-spend">0</b></div>
+         </div>
+      </div>
+    </div>
+
+    <!-- MAIN ORDERING PAGE -->
+    <div id="view-branch-order" class="branch-view-section" style="display: none;">
+      <div class="card">
+        <div class="card-title">
+          <span>🛒 Create New Order</span>
+          <button class="btn btn-primary" onclick="openOrderModal()">➕ Start Order</button>
+        </div>
+        <div id="branch-order-summary-box" style="display:none; margin-top: 1rem;">
+          <h4 style="margin:0 0 0.5rem 0;">Bumubuo ng Order...</h4>
+          <span id="summary-delivery-date-badge" class="badge badge-warning" style="margin-bottom: 0.5rem; display: inline-block;"></span>
+          <table style="width:100%; font-size: 0.9rem;">
+            <tbody id="cart-summary-tbody"></tbody>
+          </table>
+          <div style="text-align: right; margin-top: 1rem; border-top: 2px solid #ccc; padding-top: 0.5rem;">
+             <b>Grand Total (<span id="cart-item-count">0</span> items):</b> <span id="cart-summary-grand-total" style="font-size: 1.25rem; font-weight: 800; color: #b91c1c;">₱0.00</span>
+             <br><small id="cart-summary-details" style="color:#64748b;"></small>
+          </div>
+          <button class="btn btn-secondary" style="width:100%; margin-top:0.5rem;" onclick="ordReceiptPreview('draft')">👁️ Print Preview ng Resibo</button>
+          <button class="btn btn-success" style="width: 100%; margin-top: 1rem;" onclick="submitBranchOrder()">✅ SUBMIT ORDER SA COMMISSARY</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="view-branch-deliveries" class="branch-view-section" style="display: none;">
+      <div class="card">
+        <div class="card-title">🚚 My Deliveries</div>
+        <div class="table-responsive">
+          <table>
+            <thead><tr><th>PO Number</th><th>Items</th><th>Amount</th><th>Status</th><th>Aksyon</th></tr></thead>
+            <tbody id="branch-deliveries-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div id="view-branch-prime" class="branch-view-section" style="display: none;"><div id="pc-root"></div></div>
+    <div id="view-branch-attendance" class="branch-view-section" style="display: none;"><div id="att-root"></div></div>
+    <div id="view-branch-ordboard" class="branch-view-section" style="display: none;"><div id="ordboard-root"></div></div>
+    <div id="view-branch-hrdocs" class="branch-view-section" style="display: none;"><div id="hrdocs-root"></div></div>
+    <div id="view-branch-requests" class="branch-view-section" style="display: none;"><div id="req-root"></div></div>
+    <div id="view-branch-inventory" class="branch-view-section" style="display: none;">
+      <div id="branch-inventory-root"></div>
+    </div>
+  </div>
+  </div><!-- /main-wrapper -->
+
+  <!-- ORDER MODAL (BRANCH) -->
+  <div id="make-order-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem;">
+        <h3 style="margin:0;">🛒 Place Order</h3>
+        <button class="btn btn-secondary btn-sm" onclick="closeOrderModal()">✕</button>
+      </div>
+
+      <!-- Agent Mode Details -->
+      <div style="background: #f8fafc; padding: 1rem; border-radius: 4px; margin-top: 1rem; border: 1px solid #cbd5e1;">
+        <h4 style="margin:0 0 0.5rem 0;">1. Order Details & Agent Setup</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+           <div class="form-group" style="margin:0;">
+             <label>Customer (Agent Mode):</label>
+             <select id="order-customer"><option value="">-- Piliin ang Customer --</option></select>
+           </div>
+           <div class="form-group" style="margin:0;">
+             <label>Target Delivery Date:</label>
+             <input type="date" id="order-target-date" onchange="onDeliveryDateSelected()">
+           </div>
+           <div class="form-group" style="margin:0;">
+             <label>Discount Option:</label>
+             <select id="order-discount" onchange="renderCartBoxes()">
+               <option value="0">Walang Discount (0%)</option>
+               <option value="5">5% Discount</option>
+               <option value="10">10% Discount</option>
+               <option value="15">15% Discount</option>
+               <option value="20">20% Discount</option>
+               <option value="50">50% Discount</option>
+               <option value="100">100% Complimentary (Libre)</option>
+             </select>
+           </div>
+           <div class="form-group" style="margin:0;">
+             <label>VAT Option:</label>
+             <select id="order-vat" onchange="renderCartBoxes()">
+               <option value="inclusive">VAT Inclusive</option>
+               <option value="exclusive">VAT Exclusive (Added to Total)</option>
+               <option value="exempt">VAT Exempt (0%)</option>
+             </select>
+           </div>
+        </div>
+        <button class="btn btn-primary" id="btn-proceed-catalog" disabled style="margin-top: 1rem;" onclick="proceedToCatalog()">Proceed to Catalog ➔</button>
+        <span id="date-selected-badge" class="badge badge-warning" style="display:none; margin-left: 10px;"></span>
+      </div>
+
+      <!-- Catalog Section -->
+      <div id="step-catalog-section" style="display: none; margin-top: 1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+          <h4 style="margin:0;">2. Select Products</h4>
+          <button class="btn btn-primary btn-sm" onclick="openCameraBarcodeScanner('branch_catalog')">📷 Scan</button>
+        </div>
+        <input type="text" id="catalog-search-input" placeholder="Mag-search ng produkto..." oninput="filterCatalogProducts()" style="width:100%; padding:0.5rem; margin-bottom:1rem;">
+        <div id="catalog-products-list" style="max-height: 250px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 4px; margin-bottom: 1rem;"></div>
+        
+        <!-- Fillup Box -->
+        <div id="selected-product-fillup" style="display: none; background: #e0f2fe; padding: 1rem; border-radius: 4px; border: 2px solid #3b82f6; margin-bottom: 1rem;">
+           <b id="fillup-item-name" style="font-size: 1.1rem; color: #1e40af;"></b>
+           <span id="fillup-station-name" class="badge badge-admin"></span>
+           <div id="fillup-item-codes" style="font-size: 0.8rem; color: #475569; margin-top: 4px;"></div>
+           <div id="guide-whole-uom" style="display:none;"></div>
+           <div id="guide-loose-uom" style="display:none;"></div>
+           <div id="guide-whole-rate" style="display:none;"></div>
+           <div id="guide-loose-rate" style="display:none;"></div>
+           <div id="guide-conversion-text" style="display:none;"></div>
+           
+           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
+             <div>
+               <label id="fillup-whole-label"></label>
+               <input type="number" id="fillup-whole-qty" value="0" step="0.5" oninput="calculateFillupSubtotal()">
+             </div>
+             <div>
+               <label id="fillup-loose-label"></label>
+               <input type="number" id="fillup-loose-qty" value="0" step="0.5" oninput="calculateFillupSubtotal()">
+             </div>
+           </div>
+           
+           <div style="display:none;">
+             <span id="fillup-packaging-tip"></span>
+           </div>
+           
+           <div style="text-align: right; margin-top: 1rem; font-size: 1.25rem; font-weight: bold;">
+             Subtotal: <span id="fillup-subtotal-text" style="color: #b91c1c;">₱0.00</span>
+           </div>
+           <button class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;" onclick="confirmAddSelectedToCart()">I-add sa Cart</button>
+        </div>
+
+        <!-- Cart Box -->
+        <div id="modal-cart-box" style="display: none; background: #f8fafc; padding: 1rem; border: 1px dashed #cbd5e1; border-radius: 4px;">
+           <h4 style="margin: 0 0 0.5rem 0;">🛒 My Basket (<span id="modal-cart-count-badge"></span>)</h4>
+           <table style="width: 100%; font-size: 0.9rem;">
+             <tbody id="modal-cart-tbody"></tbody>
+           </table>
+           <div style="text-align: right; margin-top: 1rem; font-size: 1.25rem; font-weight: 800;">
+             Total: <span id="modal-cart-total-text" style="color: #b91c1c;"></span>
+           </div>
+           <button class="btn btn-secondary" style="width:100%; margin-top:0.5rem;" onclick="ordReceiptPreview('draft')">👁️ Print Preview ng Resibo</button>
+          <button class="btn btn-success" style="width:100%; margin-top:0.5rem;" onclick="submitBranchOrderFromModal()">✅ Submit Order</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ALL OTHER MODALS STUBS NEEDED BY APP.JS -->
+  <div id="branch-profile-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width:480px;width:100%;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;border-bottom:1px solid #e2e8f0;padding-bottom:.5rem;"><h3 style="margin:0;color:#1e293b;">👤 I-edit ang Profile (Branch)</h3><button type="button" class="btn btn-secondary btn-sm" onclick="closeBranchProfileModal()">✕</button></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:1.25rem;">
+        <img id="br-prof-pic-preview" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid #10b981;display:none;" />
+        <div id="br-prof-pic-fallback" style="width:80px;height:80px;border-radius:50%;background:#e2e8f0;color:#475569;font-weight:800;font-size:2rem;display:flex;align-items:center;justify-content:center;">B</div>
+        <label style="cursor:pointer;background:#f1f5f9;padding:4px 12px;border-radius:4px;font-size:.8rem;border:1px solid #cbd5e1;font-weight:600;color:#1e293b;display:inline-block;margin:0;">📷 Pumili ng Profile Picture<input type="file" accept="image/*" style="display:none;" onchange="previewProfilePhoto(event,'br-prof-pic-preview','br-prof-pic-fallback')"></label>
+      </div>
+      <div class="form-group"><label>Email Address</label><input type="email" id="br-prof-email" disabled style="background:#f1f5f9;"></div>
+      <div class="form-group"><label>Buong Pangalan</label><input type="text" id="br-prof-name"></div>
+      <div class="form-group"><label>Branch</label><input type="text" id="br-prof-branch" disabled style="background:#f1f5f9;"></div>
+      <div class="form-group"><label>Address</label><input type="text" id="br-prof-address"></div>
+      <div class="form-group"><label>Bagong Password (iwanang blangko kung hindi papalitan)</label><input type="password" id="br-prof-new-pass" placeholder="••••••••"></div>
+      <button type="button" class="btn btn-primary" style="width:100%;" onclick="saveBranchProfile()">💾 I-save ang Profile</button>
+    </div>
+  </div>
+  <div id="investigation-modal" class="modal-overlay" style="display: none;"></div>
+  <div id="branch-late-return-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width:520px;width:100%;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;border-bottom:1px solid #e2e8f0;padding-bottom:.5rem;"><h3 style="margin:0;color:#1e293b;">↩️ Late Return — <span id="late-return-order-id"></span></h3><button type="button" class="btn btn-secondary btn-sm" onclick="closeLateReturnModal()">✕</button></div>
+      <div id="late-return-timer" style="background:#fef3c7;color:#92400e;padding:.5rem .75rem;border-radius:.4rem;font-size:.85rem;margin-bottom:.75rem;font-weight:600;"></div>
+      <div class="form-group"><label>Item na ibabalik</label><select id="late-return-item-select"></select></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;"><div class="form-group"><label>Unit</label><select id="late-return-uom"></select></div><div class="form-group"><label>Dami</label><input type="number" id="late-return-qty" min="0" step="any" value="0"></div></div>
+      <div class="form-group"><label>Salaysay / Dahilan</label><textarea id="late-return-notes" rows="3" style="width:100%;" placeholder="Ano ang problema sa item?"></textarea></div>
+      <div class="form-group"><label>📷 Larawan ng ebidensya (kailangan)</label><input type="file" accept="image/*" onchange="previewLateReturnPhoto(event)"><div id="late-return-photo-container" style="display:none;margin-top:.5rem;"><img id="late-return-photo-preview" style="max-width:100%;max-height:180px;border-radius:.4rem;border:1px solid #e2e8f0;"></div></div>
+      <button type="button" class="btn btn-primary" style="width:100%;" onclick="submitLateReturn()">🚀 Ipadala ang Late Return</button>
+    </div>
+  </div>
+  <div id="branch-cancel-order-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width:480px;width:100%;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;border-bottom:1px solid #e2e8f0;padding-bottom:.5rem;"><h3 style="margin:0;color:#1e293b;">🚫 I-cancel ang Order <span id="branch-cancel-target-id" style="color:#dc2626;"></span></h3><button type="button" class="btn btn-secondary btn-sm" onclick="closeBranchCancelModal()">✕</button></div>
+      <div class="form-group"><label>Dahilan ng pag-cancel</label><select id="branch-cancel-reason-select" onchange="onBranchCancelReasonChange()"><option>Accidental na na-place order / Baguhang staff</option><option>Mali ang na-order na items / quantity</option><option>Hindi na kailangan / Nagbago ang plano</option><option>Duplicate order</option><option value="Others">Others (isulat sa ibaba)</option></select></div>
+      <div class="form-group" id="branch-cancel-others-box" style="display:none;"><label>Isulat ang dahilan</label><textarea id="branch-cancel-custom-notes" rows="3" style="width:100%;"></textarea></div>
+      <button type="button" class="btn btn-danger" style="width:100%;" onclick="submitBranchCancelRequest()">🚫 Isumite ang Cancellation</button>
+    </div>
+  </div>
+  <div id="branch-pahabol-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width:560px;width:100%;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;border-bottom:1px solid #e2e8f0;padding-bottom:.5rem;"><h3 style="margin:0;color:#1e293b;">➕ Pahabol sa Order <span id="branch-pahabol-parent-id" style="color:#2563eb;"></span></h3><button type="button" class="btn btn-secondary btn-sm" onclick="closeBranchPahabolModal()">✕</button></div>
+      <input type="search" id="branch-pahabol-search" placeholder="🔎 Hanapin ang produkto (pangalan / code)" oninput="filterPahabolProducts()" style="width:100%;margin-bottom:.5rem;">
+      <div id="branch-pahabol-products-list" style="max-height:220px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:.4rem;margin-bottom:.75rem;"></div>
+      <div id="branch-pahabol-fillup-box" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;border-radius:.5rem;padding:.75rem;margin-bottom:.75rem;">
+        <input type="hidden" id="pahabol-selected-id"><b id="pahabol-selected-name"></b> <small id="pahabol-selected-station" style="color:#64748b;"></small>
+        <div id="branch-pahabol-uom-guide" style="display:none;font-size:.8rem;color:#475569;margin:.4rem 0;"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;"><div class="form-group" style="margin:0;"><label id="pahabol-whole-label">Whole:</label><input type="number" id="branch-pahabol-whole-qty" min="0" step="any" value="0" oninput="calcPahabolSubtotal()"></div><div class="form-group" style="margin:0;"><label id="pahabol-loose-label">Loose:</label><input type="number" id="branch-pahabol-loose-qty" min="0" step="any" value="0" oninput="calcPahabolSubtotal()"></div></div>
+        <div style="text-align:right;margin-top:.5rem;font-weight:700;">Subtotal: <span id="branch-pahabol-subtotal">₱0.00</span></div>
+      </div>
+      <div class="form-group"><label>Paalala (optional)</label><input type="text" id="branch-pahabol-note" placeholder="hal. kailangan agad"></div>
+      <button type="button" id="btn-submit-pahabol" class="btn btn-primary" style="width:100%;" onclick="submitBranchPahabol()" disabled>➕ Ipadala ang Pahabol</button>
+    </div>
+  </div>
+  <div id="branch-scan-confirm-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width:420px;width:100%;text-align:center;">
+      <h3 style="margin-top:0;">📦 Na-scan na Item</h3>
+      <div id="scan-confirm-details" style="text-align:left;margin-bottom:1rem;"></div>
+      <button type="button" class="btn btn-success" style="width:100%;" onclick="confirmScannedItemAndNext()">✅ Tama — Susunod na Item</button>
+      <button type="button" class="btn btn-secondary" style="width:100%;margin-top:.5rem;" onclick="document.getElementById('branch-scan-confirm-modal').style.display='none'">Isara</button>
+    </div>
+  </div>
+  <div id="branch-receiving-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 600px;">
+       <h3 id="br-recv-order-id"></h3>
+       <div id="br-stage-arrival"></div>
+       <div id="br-stage-checklist"></div>
+       <div id="br-stage-sign"></div>
+       <div id="branch-receiving-items-container"></div>
+       <div id="branch-dispute-alert-box"></div>
+       <canvas id="br-recv-sig-canvas"></canvas>
+       <input id="br-recv-driver-name">
+       <input id="br-recv-receiver-name">
+       <input id="branch-incident-notes">
+       <button onclick="submitFinalReceivingProof()">Save</button>
+    </div>
+  </div>
+  <div id="barcode-scanner-modal" class="modal-overlay" style="display:none;"><div id="barcode-reader-box"></div></div>
+
+  <script src="firebase-config.js"></script>
+  <script src="app.js"></script>
+  <script src="prime.js"></script>
+
+  <!-- BIRTHDAY CELEBRANT ANIMATED POPUP MODAL -->
+  <div id="birthday-greeting-modal" class="modal-overlay" style="display: none; z-index: 10000; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px);">
+    <div class="modal-content bday-modal-container" style="max-width: 620px; width: 95%; max-height: 90vh; overflow-y: auto; position: relative; border-radius: 1.25rem; background: linear-gradient(135deg, #fffbeb 0%, #ffffff 50%, #fef3c7 100%); border: 3px solid #f59e0b; box-shadow: 0 25px 50px -12px rgba(245, 158, 11, 0.4); padding: 2rem 1.5rem; text-align: center;">
+      
+      <!-- CSS Floating Balloons & Confetti -->
+      <div class="bday-balloon bday-balloon-1">🎈</div>
+      <div class="bday-balloon bday-balloon-2">🎈</div>
+      <div class="bday-balloon bday-balloon-3">🎈</div>
+      <div class="bday-balloon bday-balloon-4">🎉</div>
+      <div class="bday-balloon bday-balloon-5">✨</div>
+
+      <!-- Animated Animated Banner Header -->
+      <div style="margin-bottom: 1.25rem;">
+        <div class="bday-banner-ribbon">
+          <span style="display: inline-block; animation: bdayBounce 1.5s infinite;">🎂</span> 
+          HAPPY BIRTHDAY! 
+          <span style="display: inline-block; animation: bdayBounce 1.5s infinite 0.3s;">🎉</span>
+        </div>
+        <p style="font-size: 0.95rem; color: #78350f; font-weight: 600; margin-top: 0.5rem; text-shadow: 0 1px 2px rgba(255,255,255,0.8);">
+          Isang taos-pusong pagbati mula sa buong pamunuan at pamilya ng kumpanya!
+        </p>
+      </div>
+
+      <!-- Cards Container for Celebrants -->
+      <div id="birthday-celebrants-cards" style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem;">
+        <!-- Dynamic Celebrant Cards injected by JS -->
+      </div>
+
+      <!-- Bottom Button -->
+      <div style="margin-top: 1rem; position: relative; z-index: 5;">
+        <button type="button" class="btn btn-warning" style="font-weight: 800; font-size: 1rem; padding: 0.65rem 2.5rem; border-radius: 9999px; box-shadow: 0 4px 14px rgba(217, 119, 6, 0.4); border: none; cursor: pointer; color: #78350f; background: linear-gradient(135deg, #fcd34d 0%, #f59e0b 100%); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" onclick="closeBirthdayModal()">
+          🎊 Maraming Salamat & Magdiwang! 🎊
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+</body>
+</html>
