@@ -308,54 +308,26 @@
           }, 800);
 
         } else {
-          // Bago ang account. Hindi pwedeng pumili ng role ang user.
-          // Titingnan kung may umiiral nang Admin sa database
-          const adminCheck = await db.collection('users').where('role', '==', 'admin').limit(1).get();
+          // Bago ang account. Hindi pwedeng pumili ng role ang user: laging PENDING.
+          // (Inalis ang "unang user = admin" na pagsusuri: ang query sa buong users collection ay
+          //  tinatanggihan ng Firestore Rules para sa non-admin. Ang unang Admin ay ginagawa sa Firebase Console.)
+          await docRef.set({
+            email: email,
+            name: displayName,
+            role: 'pending',
+            status: 'pending',
+            branch: 'Unassigned',
+            hasPasswordSet: !fromGoogle,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
 
-          if (adminCheck.empty) {
-            // Unang-unang user sa buong system = Siya ang Main Admin
-            await docRef.set({
-              email: email,
-              name: displayName,
-              role: 'admin',
-              status: 'active',
-              branch: 'Head Office',
-              hasPasswordSet: !fromGoogle,
-              createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-
-            const firstUser = {
-              email: email,
-              name: displayName,
-              role: 'admin',
-              branch: 'Head Office',
-              status: 'active',
-              requiresPasswordSetup: fromGoogle
-            };
-            setCurrentUser(firstUser);
-            showStatus('<b>Maligayang Pagdating Master Admin!</b> Dahil ikaw ang unang account, ikaw ang ginawang Head Office Admin.', false);
-            setTimeout(() => {
-              redirectToRoleDashboard('admin');
-            }, 1000);
-          } else {
-            // Lahat ng sumunod na account (Branch/Commissary) = PENDING.
-            // Hinding-hindi sila magiging admin o makakapag-set ng role nila!
-            await docRef.set({
-              email: email,
-              name: displayName,
-              role: 'pending',
-              status: 'pending',
-              branch: 'Unassigned',
-              hasPasswordSet: !fromGoogle,
-              createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-
-            showStatus(`<b>Rehistro Matagumpay!</b> Naitala ang iyong account bilang <b>PENDING</b>.<br><br>Mangyaring kontakin ang <b>Head Office Admin</b> para italaga ang iyong Role (Branch o Commissary) at i-activate ang iyong account.`);
-          }
+          showStatus(`<b>Rehistro Matagumpay!</b> Naitala ang iyong account (${email}) bilang <b>PENDING</b>.<br><br>Mangyaring kontakin ang <b>Head Office Admin</b> para italaga ang iyong Role (Branch o Commissary) at i-activate ang iyong access.`, false);
+          try { await auth.signOut(); } catch (e) {}
         }
       } catch (err) {
         console.error('Firestore Error:', err);
-        showStatus('Firestore Error: ' + err.message);
+        const denied = err && (err.code === 'permission-denied' || /permission/i.test(err.message || ''));
+        showStatus(denied ? '<b>Walang pahintulot (permission).</b> Hindi ma-rehistro ang account na ito. Sabihan ang Head Office Admin at ipasuri ang Firestore Rules. <small>(' + (err.code || '') + ')</small>' : 'Firestore Error: ' + err.message);
       }
     }
 
