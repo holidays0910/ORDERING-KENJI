@@ -1,0 +1,598 @@
+// ============================================================================
+// KUSINA ERP — FIRESTORE SECURITY RULES  (v2: may Access Control / Permissions)
+//
+// PAANO I-PUBLISH:  Firebase Console -> Firestore Database -> Rules -> i-paste -> Publish.
+// BAGO MAG-PUBLISH:
+//   1. KOPYAHIN MUNA ang kasalukuyang rules mo (para may babalikan).
+//   2. Gamitin ang "Rules Playground" sa console para subukan ang admin, commissary at branch account.
+//   3. Subukan sa test project kung maaari. Kapag may nabasag na screen, ibalik ang lumang rules.
+//
+// ANO ANG PINOPROTEKTAHAN:
+//   - Ang ROLE ay binabasa mula sa users/{email} sa Firestore (hindi sa browser).
+//   - Hindi makakapagbago ang user ng sarili niyang role / status / branch / permissions.
+//   - ACCESS CONTROL: ang Admin ang nagtatakda (per role at per user) kung anong module ang
+//     'none' | 'view' | 'edit'. Ginagamit din dito ang parehong setting:
+//        system_settings/access_control  ->  { roles: { commissary: {employees:'view', ...}, branch: {...} } }
+//        users/{email}.permissions        ->  { employees: 'edit', ... }   (nangingibabaw sa role)
+//     Ang Admin role ay laging buo ang access. Ang "users" at "truncate" ay Admin lang.
+//   - activity_logs, stock_movements, general_ledger = puwedeng dagdagan, hindi puwedeng baguhin/burahin.
+//
+// KILALANG LIMITASYON (susunod na hakbang):
+//   - Nababasa pa ng lahat ng aktibong user ang lahat ng orders (walang filter sa branch ang queries ngayon).
+//   - Ang pagkilala sa role ay ginagaya ang normalizeRole() ng app (may "admin/accounting/head" = admin).
+//   - Ang pinakaunang admin account ay kailangang gawin sa Firebase Console (users/{email}: role "admin",
+//     status "active"), dahil hindi na pinapayagan ang self-signup bilang active/admin.
+// ============================================================================
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- Pagkilala sa user at role (galing sa Firestore) ----------
+    function signedIn() { return request.auth != null && request.auth.token.email != null; }
+    function myEmail() { return request.auth.token.email.lower(); }
+    function myDocPath() { return /databases/$(database)/documents/users/$(myEmail()); }
+    function hasProfile() { return signedIn() && exists(myDocPath()); }
+    function me() { return get(myDocPath()).data; }
+    // activeAny = may aktibong account (kasama ang 'employee'). active() = aktibo at HINDI plain employee.
+    // Ang plain 'employee' ay self-service lang (attendance, OB/OT/Leave, loan, memo, HR docs) kaya hindi siya nakakabasa ng orders/produkto.
+    function activeAny() { return hasProfile() && me().status == 'active'; }
+    function isEmpRole() {
+      return activeAny() && !roleText().matches('.*(admin|accounting|head).*')
+             && !roleText().matches('.*(commi|kitchen|plant).*')
+             && !roleText().matches('.*(branch|store|outlet).*')
+             && roleText().matches('.*(employee|staff).*');
+    }
+    function active() { return activeAny() && !isEmpRole(); }
+    function myProfPath() { return /databases/$(database)/documents/attendance_profiles/$(myEmail()); }
+    function myDept() { return exists(myProfPath()) ? get(myProfPath()).data.get('dept', '') : ''; }
+    function roleText() { return string(me().role).lower(); }
+
+    // Parehong pagkakasunod ng normalizeRole() sa app.js
+    function superPath() { return /databases/$(database)/documents/system_settings/super_admins; }
+    function isAdminRole(x) { return string(x).lower().matches('.*(admin|accounting|head).*'); }
+    // Super Admin: nakalista sa system_settings/super_admins. Kung wala pang listahan, si sona101097@gmail.com lang.
+    function isSuperAdmin() { return isAdmin() && (exists(superPath()) ? myEmail() in get(superPath()).data.emails : myEmail() == 'sona101097@gmail.com'); }
+    function isAdmin() { return active() && roleText().matches('.*(admin|accounting|head).*'); }
+    function isCommissary() {
+      return active() && !roleText().matches('.*(admin|accounting|head).*')
+             && roleText().matches('.*(commi|kitchen|plant).*');
+    }
+    function isBranch() {
+      return active() && !roleText().matches('.*(admin|accounting|head).*')
+             && !roleText().matches('.*(commi|kitchen|plant).*')
+             && roleText().matches('.*(branch|store|outlet).*');
+    }
+    function isStaff() { return isAdmin() || isCommissary(); }
+
+    // ---------- ACCESS CONTROL (permissions na itinakda ni Admin) ----------
+    function accessPath() { return /databases/$(database)/documents/system_settings/access_control; }
+    function roleKey() { return isCommissary() ? 'commissary' : (isEmpRole() ? 'employee' : 'branch'); }
+    function roleLevel(m) {
+      return exists(accessPath()) && 'roles' in get(accessPath()).data
+             && roleKey() in get(accessPath()).data.roles
+             && m in get(accessPath()).data.roles[roleKey()]
+        ? get(accessPath()).data.roles[roleKey()][m] : 'none';
+    }
+    // Temporary access: gumagana lang habang hindi pa lampas ang tempUntil
+    function tempOn(m) {
+      return 'tempPerms' in me() && 'tempUntil' in me() && me().tempUntil > request.time.toMillis() && m in me().tempPerms;
+    }
+    function userLevel(m) {
+      return tempOn(m) ? me().tempPerms[m]
+           : ('permissions' in me() && m in me().permissions ? me().permissions[m] : null);
+    }
+    function level(m) { return userLevel(m) != null ? userLevel(m) : roleLevel(m); }
+    // Ang "users" at "truncate" ay hindi kailanman ipinagkakaloob (Admin lang)
+    function canView(m) { return isAdmin() || (activeAny() && (level(m) == 'view' || level(m) == 'edit')); }
+    function canEdit(m) { return isAdmin() || (activeAny() && level(m) == 'edit'); }
+
+    // Mga grupo ng module na nagbabago ng stock
+    function canStock() {
+      return isStaff() || canEdit('products') || canEdit('manufacturing') || canEdit('purchase_orders')
+             || canEdit('spoilage') || canEdit('lot_tracing');
+    }
+
+    // ---------- USERS ----------
+    match /users/{email} {
+      allow read: if signedIn() && (email == myEmail() || isAdmin() || canView('memos'));
+      // Bagong sign-up: sarili lang, hindi puwedeng active at hindi puwedeng admin
+      allow create: if signedIn() && email == myEmail()
+                    && request.resource.data.status != 'active'
+                    && !string(request.resource.data.role).lower().matches('.*(admin|accounting|head).*')
+                    && !('permissions' in request.resource.data);
+      // Sariling profile: hindi puwedeng baguhin ang role / status / branch / permissions
+      allow update: if signedIn() && email == myEmail()
+                    && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'status', 'branch', 'branches', 'areaManager', 'permissions', 'posSites', 'tempPerms', 'tempUntil', 'tempBy', 'offboardedAt', 'offboardedBy']);
+      // Admin lang ang makakapag-approve, magbago ng role at permissions
+      // Admin lang ang makakapag-manage ng users; ang mga admin account ay Super Admin lang ang puwedeng gumawa/mag-edit/magbura
+      allow create: if isSuperAdmin() || (isAdmin() && !isAdminRole(request.resource.data.get('role', '')));
+      allow update: if isSuperAdmin() || (isAdmin() && !isAdminRole(resource.data.get('role', '')) && !isAdminRole(request.resource.data.get('role', '')));
+      allow delete: if isSuperAdmin() || (isAdmin() && !isAdminRole(resource.data.get('role', '')));
+    }
+
+    // ---------- PRODUKTO AT BATAYANG DATA ----------
+    match /products/{id}            { allow read: if active(); allow write: if canStock(); }
+    // Puhunan: staff lang (HINDI nababasa ng branch)
+    match /product_costs/{id}       { allow read: if isStaff() || canView('products') || canView('manufacturing'); allow write: if isStaff() || canEdit('products') || canEdit('manufacturing'); }
+    match /storage_stations/{id}    { allow read: if active(); allow write: if isAdmin() || canEdit('stations'); }
+    match /uom_settings/{id}        { allow read: if active(); allow write: if isAdmin() || canEdit('stations'); }
+
+    // ---------- BRANCH INVENTORY ----------
+    match /product_photos/{id}          { allow read: if active(); allow write: if canStock() || isBranch(); }
+    match /companies/{id}               { allow read: if active(); allow write: if isAdmin() || canEdit('company_mgmt') || canEdit('branch_inv'); }
+    // Daily price history (may puhunan) at AR ledger: staff lang
+    match /price_history/{id}           { allow read: if isStaff() || canView('daily_prices'); allow create: if isStaff() || canEdit('daily_prices'); allow update, delete: if false; }
+    match /inventory_snapshots/{id}    { allow read: if isStaff() || canView('inv_totals'); allow create, update: if isStaff() || canEdit('inv_totals'); allow delete: if isAdmin(); }
+    // Mga Request (repair / pagbili) — branch nakikita lang ang sarili nilang request
+    function reqCfgOk() { return exists(/databases/$(database)/documents/system_settings/request_approvers); }
+    function reqCfg() { return get(/databases/$(database)/documents/system_settings/request_approvers).data; }
+    function reqHasList() { return reqCfgOk() && reqCfg().get('procurementList', []).size() > 0; }
+    function sigOk() { return exists(/databases/$(database)/documents/system_settings/po_signatories); }
+    function sigCfg() { return get(/databases/$(database)/documents/system_settings/po_signatories).data; }
+    function sigIsMe() { return sigOk() && (myEmail() == sigCfg().get('cooEmail', '') || myEmail() == sigCfg().get('supplyChainEmail', '')); }
+    function reqTeam() { return (reqCfgOk() && (myEmail() in reqCfg().get('procurementList', []) || myEmail() == reqCfg().get('cooEmail', '') || myEmail() == reqCfg().get('presidentEmail', ''))) || sigIsMe(); }
+    match /requests/{id} {
+      allow read: if isAdmin() || canView('requests') || reqTeam() || (active() && (resource.data.requesterEmail == myEmail() || resource.data.get('assigneeEmail', '') == myEmail())) || (isStaff() && !reqHasList());
+      allow create: if active() && request.resource.data.requesterEmail == myEmail();
+      allow update: if isAdmin() || canEdit('requests') || reqTeam() || (active() && (resource.data.requesterEmail == myEmail() || resource.data.get('assigneeEmail', '') == myEmail())) || (isStaff() && !reqHasList());
+      allow delete: if isAdmin();
+    }
+    match /request_photos/{id}          { allow read: if active(); allow create: if active(); allow update, delete: if false; }
+    match /request_counter/{id}         { allow read, write: if active(); }
+    match /sap_items/{id} {
+      allow read: if isStaff() || canView('sap_items');
+      allow write: if isStaff() || canEdit('sap_items');
+    }
+    // Restore Points ng SAP Item Master (snapshot bago palitan)
+    match /sap_snapshots/{id} {
+      allow read: if isStaff() || canView('sap_items');
+      allow write: if isStaff() || canEdit('sap_items');
+    }
+    // Full database backup: history + compressed restore points (Admin lang)
+    match /db_backups/{id}       { allow read, write: if isAdmin(); }
+    match /db_backup_chunks/{id} { allow read, write: if isAdmin(); }
+    match /sap_snapshot_chunks/{id} {
+      allow read: if isStaff() || canView('sap_items');
+      allow write: if isStaff() || canEdit('sap_items');
+    }
+    // Attendance & Schedule
+    match /attendance_profiles/{id} {
+      allow read: if isStaff() || canView('attendance') || (activeAny() && (id == myEmail() || resource.data.managerEmail == myEmail() || (myDept() != '' && resource.data.dept == myDept())));
+      allow write: if isStaff() || canEdit('attendance') || (activeAny() && (resource.data.managerEmail == myEmail() || request.resource.data.managerEmail == myEmail()));
+    }
+    match /attendance_weeks/{id} {
+      allow read: if isStaff() || canView('attendance') || (activeAny() && (resource.data.email == myEmail() || resource.data.managerEmail == myEmail()));
+      allow write: if isStaff() || canEdit('attendance') || (activeAny() && (request.resource.data.managerEmail == myEmail() || resource.data.managerEmail == myEmail()));
+    }
+    match /attendance_logs/{id} {
+      allow read: if isStaff() || canView('attendance') || (activeAny() && (resource.data.email == myEmail() || resource.data.managerEmail == myEmail() || (myDept() != '' && resource.data.dept == myDept())));
+      allow create, update: if isStaff() || canEdit('attendance') || (activeAny() && request.resource.data.email == myEmail());
+      allow delete: if isAdmin() || canEdit('attendance');
+    }
+    match /hr_documents/{id} {
+      allow read: if isAdmin() || canEdit('memos') || canEdit('hrdocs') || (activeAny() && resource.data.shared == true);
+      allow write: if isAdmin() || canEdit('memos') || canEdit('hrdocs');
+    }
+    match /hr_doc_files/{id} {
+      allow read: if isAdmin() || canEdit('memos') || canEdit('hrdocs') || (activeAny() && resource.data.shared == true);
+      allow write: if isAdmin() || canEdit('memos') || canEdit('hrdocs');
+    }
+    match /presence/{id} {
+      allow read: if isAdmin() || canView('memos');
+      allow write: if activeAny() && id == myEmail();
+    }
+    match /session_control/{id} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+    match /email_log/{id} {
+      allow read: if isAdmin();
+      allow create: if activeAny();
+      allow update, delete: if false;
+    }
+    match /system_health/{id} {
+      allow read, write: if isAdmin();
+    }
+    match /memos/{id} {
+      allow read: if isAdmin() || canView('memos') || (activeAny() && myEmail() in resource.data.recipients);
+      allow write: if isAdmin() || canEdit('memos');
+    }
+    // Sino ang nakabukas ng memo (HR/Admin ang nakakakita)
+    match /memo_views/{id} {
+      allow read: if isAdmin() || canView('memos') || (activeAny() && resource.data.email == myEmail());
+      allow create: if activeAny() && request.resource.data.email == myEmail();
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+    match /memo_acks/{id} {
+      allow read: if isAdmin() || canView('memos') || (activeAny() && resource.data.email == myEmail());
+      allow create: if activeAny() && request.resource.data.email == myEmail();
+      allow delete: if isAdmin();
+    }
+    match /notifications/{id} {
+      allow read, update: if activeAny() && resource.data.to == myEmail();
+      allow create: if activeAny();
+      allow delete: if isAdmin() || (activeAny() && resource.data.to == myEmail());
+    }
+    match /attendance_photos/{id} {
+      allow read: if activeAny();
+      allow create: if activeAny();
+    }
+    // Leave balance (SIL / Sick): HR ang nagtatakda; empleyado ay nababasa ang sarili
+    match /leave_balances/{id} {
+      allow read: if isStaff() || canView('employees') || canView('attendance') || (activeAny() && id == myEmail());
+      allow write: if isAdmin() || canEdit('employees');
+    }
+
+    // Team board: sino ang naka-Leave / OB sa isang department (walang dahilan/detalye). Manager/HR/Admin lang ang nagsusulat.
+    match /team_status/{id} {
+      allow read: if isStaff() || canView('attendance') || (activeAny() && myDept() != '' && resource.data.dept == myDept());
+      allow create, update, delete: if activeAny() && !isEmpRole();
+    }
+    match /attendance_requests/{id} {
+      allow read: if isStaff() || canView('attendance') || (activeAny() && (resource.data.email == myEmail() || resource.data.managerEmail == myEmail()));
+      allow create: if activeAny() && request.resource.data.email == myEmail();
+      allow update: if isStaff() || canEdit('attendance') || (activeAny() && resource.data.managerEmail == myEmail())
+                    || (activeAny() && resource.data.email == myEmail() && resource.data.status == 'Returned' && request.resource.data.email == myEmail());
+      allow delete: if isAdmin();
+    }
+    match /ar_legacy/{id}               { allow read: if isStaff() || canView('ar_ledger'); allow create: if isStaff() || canEdit('ar_ledger'); allow update, delete: if isAdmin(); }
+    match /ar_accounts/{id}             { allow read: if isStaff() || canView('ar_ledger'); allow write: if isStaff() || canEdit('ar_ledger'); }
+    match /ar_payment_photos/{id}       { allow read: if isStaff() || canView('ar_ledger'); allow create: if active(); allow update, delete: if false; }
+    // Bayad na isinumite ni agent (branch) — i-co-confirm ng accounting ng commissary
+    match /payment_submissions/{id}     { allow read: if isStaff() || canView('ar_ledger') || (active() && resource.data.byEmail == myEmail());
+                                          allow create: if active() && request.resource.data.byEmail == myEmail() && request.resource.data.status == 'pending';
+                                          allow update: if isStaff() || canEdit('ar_ledger');
+                                          allow delete: if false; }
+    match /price_lists/{id}             { allow read: if active(); allow write: if isAdmin() || canEdit('price_lists') || canEdit('company_mgmt') || canEdit('products'); }
+    match /branch_stations/{id}         { allow read: if active(); allow write: if isAdmin() || canEdit('branch_inv'); }
+    match /inventory_branches/{id}      { allow read: if active(); allow write: if isAdmin() || canEdit('branch_inv'); }
+    match /inventory_items/{id} {
+      allow read: if active();
+      allow create, update: if isAdmin() || canEdit('branch_inv') || isBranch();
+      allow delete: if isAdmin() || canEdit('branch_inv');
+    }
+    match /inventory_counts/{id} {
+      allow read: if active();
+      allow create: if isAdmin() || isBranch() || canEdit('branch_inv');
+      allow update: if isAdmin() || canEdit('branch_inv') || (isBranch() && resource.data.status != 'approved');
+      allow delete: if isAdmin();
+    }
+    match /inventory_costs/{id} {
+      allow read: if active();
+      allow write: if isAdmin() || isBranch() || canEdit('branch_inv');
+    }
+    match /inventory_markouts/{id} {
+      allow read: if active();
+      allow write: if isAdmin() || isBranch() || canEdit('branch_inv');
+    }
+    match /inventory_bom/{id} {
+      allow read: if active();
+      allow write: if isAdmin() || isBranch() || canEdit('branch_inv');
+    }
+    match /inventory_station_map/{id} {
+      allow read: if active();
+      allow write: if isAdmin() || isBranch() || canEdit('branch_inv');
+    }
+    match /inventory_item_requests/{id} {
+      allow read: if active();
+      allow create: if isAdmin() || isBranch() || isCommissary();
+      allow update: if isAdmin() || isCommissary() || canEdit('branch_inv');
+      allow delete: if isAdmin();
+    }
+    match /commissary_hubs/{id}     { allow read: if active(); allow write: if isAdmin() || canEdit('stations'); }
+    match /commissary_team/{id}     { allow read: if active(); allow write: if isStaff() || canEdit('team'); }
+    match /customers/{id} {
+      allow read: if active();
+      allow create, update: if active();
+      allow delete: if isAdmin() || canEdit('customers');
+    }
+    match /bom_recipes/{id} {
+      allow read: if isStaff() || canView('manufacturing') || canView('costing');
+      allow write: if isAdmin() || canEdit('manufacturing');
+    }
+    match /product_backups/{id} {
+      allow read: if canView('backups');
+      allow create: if canEdit('backups') || canEdit('products');
+      allow update, delete: if canEdit('backups');
+    }
+    match /product_logs/{id}        { allow read: if canView('logs'); allow create: if active(); }
+
+    // ---------- ORDERS AT DISPUTES ----------
+    match /orders/{id} {
+      allow read: if active();   // TODO: i-lock sa sariling branch kapag naayos na ang branch queries
+      // Branch = nag-o-order lang. Discount, VAT, agent/customer at "takenBy" ay Commissary / Supply Chain / Admin lang.
+      allow create: if isStaff()
+                    || (isBranch() && request.resource.data.branchEmail.lower() == myEmail()
+                        && string(request.resource.data.get('discountRate', '0')) in ['0', '0.0', '']
+                        && request.resource.data.get('discountAmount', 0) == 0
+                        && request.resource.data.get('vatType', 'inclusive') == 'inclusive'
+                        && request.resource.data.get('isAgentOrder', false) == false
+                        && !('takenBy' in request.resource.data));
+      allow update: if isStaff() || canEdit('disputes')
+                    || (isBranch() && resource.data.branchEmail.lower() == myEmail()
+                        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['discountRate', 'discountAmount', 'discountNote', 'vatType', 'vatAmount', 'subtotalAmount', 'totalAmount', 'isAgentOrder', 'agentName', 'customerId', 'customerName', 'takenBy', 'takenByEmail', 'takenAt', 'priceSetBy', 'priceSetAt', 'items']));
+      allow delete: if isAdmin();
+    }
+    match /disputes/{id} {
+      allow read: if active();
+      allow create: if active();
+      allow update, delete: if isStaff() || canEdit('disputes');
+    }
+
+    // ---------- STOCK ----------
+    match /stock_movements/{id} {
+      allow read: if isStaff() || canView('products') || canView('logs');
+      allow create: if canStock();
+      allow update, delete: if false;      // tala ng galaw ng stock: hindi mababago
+    }
+    match /spoilage_requests/{id} {
+      allow read: if isStaff() || canView('spoilage');
+      allow create: if isStaff() || canEdit('spoilage');
+      allow update, delete: if isAdmin() || canEdit('spoilage');
+    }
+    match /inventory_lots/{id}      { allow read: if isStaff() || canView('lot_tracing'); allow write: if isStaff() || canEdit('lot_tracing'); }
+    match /assets/{id}              { allow read: if canView('assets'); allow write: if canEdit('assets'); }
+    // Software / hosting subscriptions: Admin at Super Admin lang
+    // Help/FAQ bot: lahat ng naka-login ay nakakabasa ng FAQ; Admin lang ang nagsusulat. Ticket: sariling ticket lang ang nababasa (maliban sa Admin).
+    match /help_faq/{id}            { allow read: if signedIn(); allow write: if isAdmin(); }
+    match /help_tickets/{id} {
+      allow create: if signedIn() && request.resource.data.email.lower() == myEmail() && request.resource.data.status == 'open' && request.resource.data.keys().hasOnly(['q','ctx','email','name','at','status','page']);
+      allow read: if isAdmin() || (signedIn() && resource.data.email.lower() == myEmail());
+      allow update, delete: if isAdmin();
+    }
+    // Messenger: chat directory, chats (DM/group) at mga mensahe — miyembro lang ng chat ang nakakabasa/nakakasulat
+    match /chat_directory/{email} {
+      allow read: if activeAny();
+      allow create, update: if activeAny() && email == myEmail();
+      allow delete: if isAdmin();
+    }
+    match /chats/{cid} {
+      allow read: if activeAny() && myEmail() in resource.data.members;
+      allow create: if activeAny() && myEmail() in request.resource.data.members && request.resource.data.members.size() <= 100
+                    && (request.resource.data.type == 'group' || (request.resource.data.type == 'dm' && request.resource.data.members.size() == 2));
+      allow update: if activeAny() && myEmail() in resource.data.members
+                    && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastAt','lastBy','lastMsg','reads','hidden'])
+                        || (resource.data.type == 'group' && resource.data.createdBy == myEmail())
+                        || (resource.data.type == 'group'
+                            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members','admins'])
+                            && resource.data.members.toSet().difference(request.resource.data.members.toSet()).hasOnly([myEmail()])
+                            && request.resource.data.members.toSet().difference(resource.data.members.toSet()).size() == 0));
+      allow delete: if isAdmin();
+      match /messages/{mid} {
+        allow read: if activeAny() && myEmail() in get(/databases/$(database)/documents/chats/$(cid)).data.members;
+        allow create: if activeAny() && myEmail() in get(/databases/$(database)/documents/chats/$(cid)).data.members && request.resource.data.from == myEmail();
+        allow update: if activeAny() && myEmail() in get(/databases/$(database)/documents/chats/$(cid)).data.members
+                      && (resource.data.from == myEmail()
+                          || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deletedFor'])
+                              && request.resource.data.deletedFor.toSet().difference(resource.data.deletedFor.toSet()).hasOnly([myEmail()])));
+        allow delete: if activeAny() && resource.data.from == myEmail();
+      }
+      match /media/{k} {
+        allow read, create: if activeAny() && myEmail() in get(/databases/$(database)/documents/chats/$(cid)).data.members;
+        allow delete: if activeAny() && myEmail() in get(/databases/$(database)/documents/chats/$(cid)).data.members;
+      }
+    }
+    match /subscriptions/{id}       { allow read, write: if isAdmin(); }
+
+    // ---------- PERA / HR / VENDOR ----------
+    match /vendors/{id}             { allow read: if active(); allow write: if isAdmin() || canEdit('vendors'); }
+    match /vendor_pos/{id} {
+      allow read: if isStaff() || canView('purchase_orders') || canView('ap_invoices') || canView('auto_pr');
+      allow create: if isStaff() || canEdit('purchase_orders') || canEdit('auto_pr');
+      allow update, delete: if isAdmin() || canEdit('purchase_orders') || canEdit('ap_invoices');
+    }
+    match /general_ledger/{id} {
+      allow read: if canView('finance') || canView('ap_invoices') || canView('payroll');
+      allow create: if canEdit('finance') || canEdit('ap_invoices') || canEdit('payroll');
+      allow update, delete: if false;       // hindi binabago ang ledger; adjustment entry lang
+    }
+    match /employees/{id} {
+      allow read: if canView('employees') || canView('payroll') || (activeAny() && resource.data.email == myEmail());
+      allow write: if canEdit('employees');
+      // NBI, Police, Barangay, atbp. (litrato / PDF)
+      match /documents/{docId} {
+        allow read: if canView('employees');
+        allow write: if canEdit('employees');
+      }
+      // Promotion / contract / evaluation history
+      match /history/{hid} {
+        allow read: if canView('employees');
+        allow write: if canEdit('employees');
+      }
+    }
+    match /payrolls/{id} {
+      allow read: if canView('payroll');
+      allow write: if canEdit('payroll');
+    }
+
+    // ---------- SETTINGS ----------
+    match /system_settings/{id} {
+      allow read: if activeAny();              // branding, SI sequence, access_control, atbp.
+      allow write: if (isAdmin() && id != 'super_admins' && id != 'menu_visibility' && id != 'loan_config' && id != 'security_policy' && id != 'maintenance' && id != 'developer')
+                   || ((id == 'super_admins' || id == 'menu_visibility' || id == 'loan_config' || id == 'security_policy' || id == 'maintenance' || id == 'developer') && isSuperAdmin())
+                   || (isCommissary() && id == 'invoice_sequence')
+                   || (id == 'loan_template' && canEdit('loans'))
+                   || (id == 'leave_defaults' && canEdit('employees'))
+                   || (id == 'positions' && (canEdit('employees') || canEdit('hrdocs')))
+                   || (id == 'branding' && canEdit('branding'))
+                   || (id == 'attendance_presets' && canEdit('attendance'))
+                   || (id == 'finance_balances' && canEdit('finance'));
+      // Ang 'access_control' ay Admin lang (isAdmin() sa itaas ang tanging nakakapag-sulat nito)
+    }
+
+    // ---------- ACCOUNTING (BOOKS) ----------
+    match /acct_accounts/{id} {
+      allow read: if isAdmin() || canView('acct');
+      allow write: if isAdmin() || canEdit('acct');
+    }
+    match /acct_journal/{id} {
+      allow read: if isAdmin() || canView('acct');
+      allow create: if isAdmin() || canEdit('acct');
+      allow update, delete: if false;       // hindi binabago ang journal; reversal entry lang
+    }
+    match /acct_bank_recs/{id} {
+      allow read: if isAdmin() || canView('acct');
+      allow create: if isAdmin() || canEdit('acct');
+      allow update, delete: if false;
+    }
+    match /acct_invoices/{id} {
+      allow read: if isAdmin() || canView('acct');
+      allow create, update: if isAdmin() || canEdit('acct');
+      allow delete: if false;
+    }
+    match /acct_memos/{id} {
+      allow read: if isAdmin() || canView('acct');
+      allow create: if isAdmin() || canEdit('acct');
+      allow update, delete: if false;
+    }
+    match /acct_budgets/{id} {
+      allow read: if isAdmin() || canView('acct');
+      allow write: if isAdmin() || canEdit('acct');
+    }
+    match /acct_recurring/{id} {
+      allow read: if isAdmin() || canView('acct');
+      allow write: if isAdmin() || canEdit('acct');
+    }
+
+    // ---------- LOANS ----------
+    match /loans/{id} {
+      allow read: if isAdmin() || canView('loans') || (activeAny() && resource.data.email == myEmail());
+      // Self-apply ng empleyado: sarili lang, Pending lang
+      allow create: if isAdmin() || canEdit('loans')
+                    || (activeAny() && request.resource.data.email == myEmail() && request.resource.data.status == 'Pending' && request.resource.data.filedBy == myEmail());
+      allow update: if isAdmin() || canEdit('loans')
+                    || (activeAny() && resource.data.email == myEmail() && resource.data.status == 'Pending' && request.resource.data.status == 'Cancelled');
+      allow delete: if false;
+    }
+
+    // ---------- PRIME COST (weekly, kada branch) ----------
+    match /pc_weeks/{id}   { allow read: if isAdmin() || isBranch() || canView('prime'); allow write: if isAdmin() || isBranch() || canEdit('prime'); }
+    match /pc_setup/{id}   { allow read: if active(); allow write: if isAdmin(); }
+    match /pc_rates/{id}   { allow read: if active(); allow write: if isAdmin(); }
+    match /pc_ratesecure/{id} { allow read, write: if isAdmin(); }
+    match /pc_actual/{id}  { allow read: if isAdmin() || isBranch(); allow write: if isAdmin(); }
+
+    // ---------- LST (schedule / manning / bio) ----------
+    match /lst_setup/{id} { allow read: if canView('lst'); allow write: if canEdit('lst'); }
+    match /lst_weeks/{id} { allow read: if canView('lst'); allow write: if canEdit('lst'); }
+    match /lst_bio/{id}   { allow read: if canView('lst'); allow write: if canEdit('lst'); }
+
+    // ---------- AUDIT LOG ----------
+    match /activity_logs/{id} {
+      allow read: if canView('logs');
+      allow create: if active();
+      allow update, delete: if false;
+    }
+
+    // ---------- KUSINA POS ----------
+    function posOk() { return isAdmin() || canEdit('pos'); }
+    // Branch isolation (opt-in): kapag naka-ON sa system_settings/security_policy.branchIsolation, ang branch user ay
+    // makakapagsulat lang sa POS data ng sariling branch (users/{email}.posSites = listahan ng site key).
+    function isoOn() { return exists(/databases/$(database)/documents/system_settings/security_policy) && get(/databases/$(database)/documents/system_settings/security_policy).data.get('branchIsolation', false) == true; }
+    function siteGuard(s) { return !isoOn() || posOk() || ('posSites' in me() && s in me().posSites); }
+    match /pos_setup/{id}  {
+      allow read: if active();
+      allow create: if posOk() || (isBranch() && request.resource.data.keys().hasOnly(['sites', 'company']));
+      allow update: if posOk() || (isBranch() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['sites', 'company']));
+      allow delete: if posOk();
+    }
+    match /pos_menu/{id} {
+      allow read: if active();
+      allow write: if posOk();
+      // Branch manager: event-only na item lang
+      allow create, update: if isBranch() && request.resource.data.get('eventId', '') != '';
+    }
+    match /pos_events/{id} { allow read: if active(); allow write: if posOk() || isBranch(); allow delete: if posOk(); }
+    match /pos_event_stock/{id} { allow read: if active(); allow write: if posOk() || isBranch(); }
+    match /pos_sales/{id} {
+      allow read: if active();
+      allow create: if posOk() || (isBranch() && request.resource.data.cashierEmail.lower() == myEmail() && siteGuard(request.resource.data.get('site', '')));
+      // Branch: void / OR no. lang; Admin/POS/Accounting: lahat (hal. dispute status)
+      allow update: if posOk() || canEdit('ar_ledger')
+                    || (isBranch() && siteGuard(resource.data.get('site', '')) && (
+                        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['orNo'])
+                        // Void lang ang puwede (hindi na maibabalik sa 'paid'), at nakatala kung sino
+                        || (resource.data.get('status', '') != 'void' && request.resource.data.status == 'void'
+                            && request.resource.data.void.by.lower() == myEmail()
+                            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'void', 'reopened']))));
+      allow delete: if isAdmin();
+    }
+    match /pos_counters/{id} { allow read: if active(); allow write: if posOk() || isBranch(); }
+    match /pos_members/{id} {
+      allow read: if active();
+      allow create: if posOk() || isBranch();
+      allow update: if posOk() || (isBranch() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['points'])
+                    && request.resource.data.points is number && request.resource.data.points >= 0);
+      allow delete: if posOk();
+    }
+    match /pos_giftcards/{id} {
+      allow read: if active();
+      allow create: if posOk() || isBranch();
+      allow update: if posOk() || (isBranch()
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['balance', 'value', 'log', 'status', 'voidAt', 'voidBy'])
+                    && request.resource.data.balance is number && request.resource.data.balance >= 0
+                    && request.resource.data.balance <= request.resource.data.value);
+      allow delete: if isAdmin();
+    }
+    // QR self-ordering: ang pos_pubmenu ay public-read (pangalan/presyo lang, walang BOM); ang customer ay maaaring mag-create lang ng 'new' na order
+    match /pos_pubmenu/{id} { allow read: if true; allow write: if posOk() || isBranch(); }
+    match /pos_qr_orders/{id} {
+      allow create: if request.resource.data.status == 'new' && request.resource.data.items is list && request.resource.data.items.size() > 0 && request.resource.data.items.size() <= 60 && request.resource.data.keys().hasOnly(['company','site','tableId','tableName','items','custName','note','status','createdAt']);
+      allow read: if active();
+      allow update: if posOk() || isBranch();
+      allow delete: if isAdmin();
+    }
+    match /pos_floor/{id}   { allow read: if active(); allow write: if posOk() || isBranch(); }
+    match /pos_reservations/{id} { allow read: if active(); allow create, update: if posOk() || isBranch(); allow delete: if isAdmin(); }
+    match /pos_vouchers/{id} {
+      allow read: if active();
+      allow create: if isAdmin();
+      allow update: if isAdmin() || ((posOk() || isBranch()) && ((resource.data.status == 'active' && request.resource.data.status == 'used') || (resource.data.status == 'used' && request.resource.data.status == 'active')));
+      allow delete: if isAdmin();
+    }
+    match /pos_tabs/{id}    { allow read: if active(); allow create: if posOk() || (isBranch() && siteGuard(request.resource.data.get('site', ''))); allow update: if posOk() || (isBranch() && siteGuard(resource.data.get('site', '')) && siteGuard(request.resource.data.get('site', ''))); allow delete: if isAdmin(); }
+    match /pos_86/{id}      { allow read: if active(); allow write: if posOk() || isBranch(); }
+    match /pos_stations/{id}     { allow read: if active(); allow write: if posOk() || isBranch(); }
+    match /pos_print_jobs/{id}   { allow read: if active(); allow create, update: if posOk() || isBranch(); allow delete: if isAdmin(); }
+    match /pos_print_agents/{id} { allow read: if active(); allow write: if false; }
+    match /pos_restore/{id} { allow read, write: if posOk(); }
+    match /pos_clubs/{id}   { allow read: if active(); allow create: if posOk() || isBranch(); allow update, delete: if posOk(); }
+    match /pos_shifts/{id}  { allow read: if active(); allow create: if posOk() || (isBranch() && siteGuard(request.resource.data.get('site', ''))); allow update: if posOk() || (isBranch() && siteGuard(resource.data.get('site', ''))); allow delete: if isAdmin(); }
+    match /pos_docs/{id}    { allow read: if active(); allow write: if posOk() || isBranch(); }
+    match /pos_roster/{id}  { allow read: if active(); allow write: if posOk() || isBranch(); }
+    match /pos_ideal/{id}   { allow read: if active(); allow write: if posOk() || isBranch(); }
+    // Pangalan/posisyon/branch lang ng empleyado (walang sahod o pribadong detalye)
+    match /emp_directory/{id} { allow read: if active(); allow write: if canEdit('employees'); }
+
+    // ---------- SECURITY & ACCESS CENTER ----------
+    // Lockout: kailangang mabasa/masulat bago pa makapag-login (walang server). Limitado ang laman.
+    match /login_policy/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /login_attempts/{email} {
+      allow read: if true;
+      allow create, update: if request.resource.data.keys().hasOnly(['email', 'fails', 'lockedUntil', 'lastAt'])
+                            && request.resource.data.email == email;
+      allow delete: if isAdmin();
+    }
+    match /login_history/{id} {
+      allow create: if request.resource.data.keys().hasOnly(['email', 'result', 'reason', 'at', 'atMs', 'ua', 'ip'])
+                    && string(request.resource.data.result).size() < 12;
+      allow read, delete: if isAdmin();
+      allow update: if false;
+    }
+    match /sec_alerts/{id} { allow create: if activeAny(); allow read, delete: if isAdmin(); allow update: if false; }
+    match /sec_errors/{id} { allow create: if activeAny(); allow read, delete: if isAdmin(); allow update: if false; }
+    match /sec_approvals/{id} {
+      allow create: if isAdmin() && request.resource.data.requestedBy == myEmail() && request.resource.data.status == 'pending';
+      allow read: if isAdmin();
+      // Ibang Admin lang ang puwedeng mag-approve; ang humiling lang ang puwedeng gumamit (used)
+      allow update: if isAdmin() && (
+        (resource.data.requestedBy != myEmail() && resource.data.status == 'pending' && request.resource.data.status in ['approved', 'rejected'])
+        || (resource.data.requestedBy == myEmail() && resource.data.status == 'approved' && request.resource.data.status == 'used'));
+      allow delete: if isAdmin();
+    }
+
+    // ---------- Lahat ng iba: bawal ----------
+    match /{document=**} { allow read, write: if false; }
+  }
+}
