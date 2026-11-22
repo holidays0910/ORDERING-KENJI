@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Employee Portal - KusinaERP</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+</head>
+<body class="page-employee">
+  <aside class="sidebar" id="app-sidebar">
+    <div class="sidebar-header" onclick="toggleSidebar()" title="I-click para itago ang menu">
+      <img class="brand-logo-img" style="display: none;" alt="Logo" />
+      <span class="default-brand-icon" style="font-size: 1.6rem;">🍳</span>
+      <div class="brand-text-box">
+        <span id="brand-header-title">KusinaERP</span>
+        <span id="brand-header-subtitle">Employee Portal</span>
+      </div>
+    </div>
+    <nav class="sidebar-menu">
+      <div class="menu-category">Ako</div>
+      <a href="javascript:void(0)" data-view="att" onclick="switchEmpView('att')" class="menu-item active"><i>🕒</i> Attendance Ko (OB / OT / Leave)</a>
+      <a href="javascript:void(0)" data-view="team" onclick="switchEmpView('team')" class="menu-item"><i>👥</i> Team Attendance</a>
+      <div class="menu-category">HR</div>
+      <a href="javascript:void(0)" data-view="loan" onclick="switchEmpView('loan')" class="menu-item"><i>🏦</i> Loan Ko</a>
+      <a href="javascript:void(0)" data-view="docs" onclick="switchEmpView('docs')" class="menu-item"><i>📚</i> HR Documents</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-profile">
+        <img class="user-avatar-img" style="display: none;" />
+        <div class="user-avatar-initials" style="background:#6366f1;">E</div>
+        <div class="user-details"><span class="user-name" id="user-display">Employee</span><span class="user-role">Employee</span></div>
+      </div>
+    </div>
+  </aside>
+  <div id="toast-container"></div>
+  <div class="main-wrapper">
+    <header class="top-header">
+      <div style="display: flex; align-items: center; gap: 15px;">
+        <button class="hamburger-btn" onclick="toggleSidebar()">☰</button>
+        <b style="color: #1e293b; font-size: 1.1rem; letter-spacing: -0.5px;">KusinaERP <span style="color: #6366f1;">Employee</span></b>
+      </div>
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <span style="font-weight: 600; font-size: 0.85rem; color: #475569;" id="top-user-display">Account</span>
+        <button class="btn btn-secondary btn-sm" onclick="logoutUser()" title="Logout">🚪 Logout</button>
+      </div>
+    </header>
+
+    <div class="container main-content">
+      <div id="emp-view-att" class="emp-view"><div id="att-root"></div></div>
+      <div id="emp-view-team" class="emp-view" style="display:none;"><div id="emp-team-root"></div></div>
+      <div id="emp-view-loan" class="emp-view" style="display:none;"><div id="loan-my-root"></div></div>
+      <div id="emp-view-docs" class="emp-view" style="display:none;"><div id="hrdocs-root"></div></div>
+    </div>
+  </div>
+
+  <script src="firebase-config.js"></script>
+  <script src="app.js?v=m3"></script>
+  <script src="loan.js"></script>
+  <script src="emp_portal.js"></script>
+  <script src="messenger.js?v=3"></script>
+</body>
+</html>
