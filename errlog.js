@@ -1,0 +1,81 @@
+/* ===== 🧾 KusinaERP Error Log =====
+   - Bawat error ay may CODE (hal. ERR-MK3F2A-7QX) na nakikita ng user at naka-save sa Firestore: error_logs/{code}
+   - May detalye: sino, saan (menu/page), ano ang huling pinindot, connection (offline/mabagal), Firestore error code, stack
+   - May "Posibleng dahilan" (Tagalog) para madaling ma-support
+   - Admin: menu "🧾 Error Logs" → hanapin gamit ang code o text
+*/
+(function () {
+  if (window.kErr) return;
+  const LS = 'kerr_q', MAXQ = 30; let VIEW = '', SKEW = 0, N = 0; const CRUMBS = [], SEEN = {}, ST = { offAt: 0, onAt: 0 };
+  const $ = id => document.getElementById(id), E = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const D = () => { try { return window.db || (window.firebase && firebase.firestore()); } catch (e) { return null; } };
+  const now = () => new Date(Date.now() + SKEW).toISOString();
+  const user = () => { let u = {}; try { if (typeof window.getCurrentUser === 'function') u = getCurrentUser() || {}; else u = window.currentUser || {}; } catch (e) {} let em = u.email || ''; try { if (!em && window.firebase) em = (firebase.auth().currentUser || {}).email || ''; } catch (e) {} return { email: String(em || '').toLowerCase(), name: u.name || u.fullName || '', role: u.role || '' }; };
+  const isA = () => /admin|super/i.test(String(user().role)) || !!window.IS_SUPER_ADMIN;
+  const crumb = t => { CRUMBS.push(now().slice(11, 19) + ' ' + String(t).slice(0, 90)); if (CRUMBS.length > 15) CRUMBS.shift(); };
+  const code = () => 'ERR-' + Date.now().toString(36).toUpperCase().slice(-6) + '-' + Math.random().toString(36).slice(2, 5).toUpperCase();
+  const conn = () => { const c = navigator.connection || navigator.mozConnection || {}; return { online: navigator.onLine !== false, type: c.effectiveType || '', rtt: c.rtt == null ? null : c.rtt, down: c.downlink == null ? null : c.downlink, saver: !!c.saveData }; };
+  function diagnose(r) {
+    const m = (r.fsCode + ' ' + r.msg).toLowerCase(), c = r.conn, recentOff = ST.offAt && (Date.now() - ST.offAt < 90000), slow = c.type === 'slow-2g' || c.type === '2g' || (c.rtt != null && c.rtt > 1200);
+    const savey = /save|i-save|submit|checkout|bayad|pay|isend|send|post|confirm|ok\b/i.test((CRUMBS.slice(-4).join(' ')));
+    const D = [];
+    if (!c.online || recentOff) D.push('📴 Walang internet / naputol ang koneksyon' + (savey ? ' habang nagsa-save o nagpapadala — posibleng HINDI na-save. I-check muna ang record bago ulitin.' : '.'));
+    if (/unavailable|deadline-exceeded|network|failed to fetch|timeout|timed out|load failed|networkerror/.test(m)) D.push('🐢 Mabagal o putol ang connection papunta sa server' + (slow ? ' (mahina ang signal: ' + c.type + ', ' + c.rtt + 'ms)' : '') + ' — puwedeng hindi natapos ang pag-save.');
+    if (/permission-denied|missing or insufficient permissions/.test(m)) D.push('🔒 Walang pahintulot ang account (role/branch/rules). I-check ang access ng user o ang Firestore rules.');
+    if (/unauthenticated|auth\//.test(m)) D.push('🔑 Na-logout o nag-expire ang login. Mag-login ulit.');
+    if (/resource-exhausted|quota/.test(m)) D.push('📈 Naubos ang quota ng Firebase (reads/writes) o masyadong maraming request.');
+    if (/not-found/.test(m)) D.push('🔎 Walang nakitang record/dokumento (nabura o mali ang ID).');
+    if (/already-exists/.test(m)) D.push('♻️ Existing na ang record (duplicate code/ID).');
+    if (/failed-precondition|requires an index/.test(m)) D.push('🗂️ Kulang ang Firestore index o hindi tama ang kondisyon ng query.');
+    if (/aborted|contention/.test(m)) D.push('⚔️ Sabay na pag-edit (conflict). Subukan ulit.');
+    if (/too large|exceeds the maximum|invalid-argument|1048576/.test(m)) D.push('📦 Masyadong malaki o hindi tama ang data na sinave (limit 1MB bawat dokumento).');
+    if (/typeerror|undefined|null|is not a function|cannot read/.test(m)) D.push('🐞 Bug sa code o kulang ang data (undefined/null). Ipadala ang code na ito sa developer.');
+    if (/quota.*exceeded|storage/.test(m) && /localstorage|setitem/.test(m)) D.push('💾 Puno ang storage ng browser.');
+    if (!D.length) D.push('❓ Hindi matukoy agad — tingnan ang stack at huling pinindot.');
+    return D;
+  }
+  function build(i) {
+    const e = i.err, msg = String(i.msg || (e && (e.message || e)) || 'Unknown error'), fs = (e && (e.code || '')) || i.fsCode || '';
+    const r = { code: code(), at: now(), type: i.type || 'error', module: VIEW || '', page: (location.pathname.split('/').pop() || 'index') + (location.hash || ''), where: i.where || '', msg: msg.slice(0, 600), fsCode: String(fs).slice(0, 80), stack: String((e && e.stack) || i.stack || '').slice(0, 3500),
+      file: i.file || '', line: i.line || 0, col: i.col || 0, user: user().email, name: String(user().name || '').slice(0, 80), role: String(user().role || '').slice(0, 40), conn: conn(), crumbs: CRUMBS.slice(), ua: navigator.userAgent.slice(0, 220), scr: innerWidth + 'x' + innerHeight, vis: document.visibilityState, status: 'open' };
+    r.diag = diagnose(r); r.note = String(i.note || '').slice(0, 300); return r;
+  }
+  function q(r) { try { const a = JSON.parse(localStorage.getItem(LS) || '[]'); a.push(r); localStorage.setItem(LS, JSON.stringify(a.slice(-MAXQ))); } catch (e) {} }
+  async function push(r) { const d = D(); if (!d) { q(r); return false; } try { await d.collection('error_logs').doc(r.code).set(r); return true; } catch (e) { r.queued = true; q(r); return false; } }
+  async function flush() { let a = []; try { a = JSON.parse(localStorage.getItem(LS) || '[]'); } catch (e) {} if (!a.length || !D() || !navigator.onLine) return; const left = []; for (const r of a) { try { delete r.queued; await D().collection('error_logs').doc(r.code).set(r); } catch (e) { r.queued = true; left.push(r); } } try { localStorage.setItem(LS, JSON.stringify(left)); } catch (e) {} }
+  function banner(r, silent) { if (silent) return; let b = $('kerr-b'); if (b) b.remove(); b = document.createElement('div'); b.id = 'kerr-b'; b.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:76px;z-index:2147483000;background:#7f1d1d;color:#fff;border-radius:12px;padding:10px 14px;max-width:92vw;font:14px system-ui,sans-serif;box-shadow:0 6px 24px #0007;display:flex;gap:10px;align-items:center;flex-wrap:wrap';
+    b.innerHTML = '<span>⚠️ May error. Code: <b style="font-size:15px;letter-spacing:.5px">' + E(r.code) + '</b></span><button style="padding:4px 10px;border-radius:8px;border:0;cursor:pointer" id="kerr-cp">Kopyahin</button><button style="padding:4px 8px;border-radius:8px;border:0;cursor:pointer" id="kerr-x">✖</button>'; document.body.appendChild(b);
+    $('kerr-x').onclick = () => b.remove(); $('kerr-cp').onclick = () => { try { navigator.clipboard.writeText(r.code); $('kerr-cp').textContent = '✔ Nakopya'; } catch (e) { prompt('Code:', r.code); } }; setTimeout(() => { if (b.parentNode) b.remove(); }, 12000); }
+  function log(i) { i = i || {}; const sig = String(i.msg || (i.err && i.err.message) || i.err) + '|' + (i.where || ''); const t = Date.now(); if (SEEN[sig] && t - SEEN[sig].t < 60000) return SEEN[sig].code; if (N >= 25) return ''; N++; const r = build(i); SEEN[sig] = { t, code: r.code }; push(r); banner(r, i.silent); return r.code; }
+  // ---- auto capture
+  window.addEventListener('error', e => { if (e.target && e.target !== window) return; const m = String(e.message || ''); if (/ResizeObserver|Script error\.?$/.test(m)) return; log({ type: 'js', err: e.error, msg: m, file: String(e.filename || '').split('/').pop(), line: e.lineno, col: e.colno }); });
+  window.addEventListener('unhandledrejection', e => { const r = e.reason; log({ type: 'promise', err: r && r.message ? r : null, msg: r && (r.message || String(r)), fsCode: r && r.code }); });
+  window.addEventListener('offline', () => { ST.offAt = Date.now(); crumb('📴 nawala ang internet'); });
+  window.addEventListener('online', () => { ST.onAt = Date.now(); crumb('📶 bumalik ang internet'); flush(); });
+  document.addEventListener('click', e => { const t = e.target && e.target.closest && e.target.closest('button,a,[onclick],input[type=submit]'); if (t) crumb('click: ' + ((t.innerText || t.title || t.value || t.id || t.tagName) + '').trim().replace(/\s+/g, ' ')); }, true);
+  const ce = console.error; console.error = function () { try { const a = [...arguments], f = a.find(x => x && (x.code || x.message)); if (f) log({ type: 'console', err: f, msg: String(f.message || f), fsCode: f.code, where: String(a[0] && a[0].toString ? a[0] : '').slice(0, 80), silent: true }); } catch (x) {} return ce.apply(console, arguments); };
+  // alert na may error → dagdagan ng code
+  const oa = window.alert; window.alert = function (m) { try { if (/error|hindi na-save|hindi nai-save|nabigo|failed|permission|insufficient|walang pahintulot|❌/i.test(String(m))) { const c = log({ type: 'alert', msg: String(m), silent: true }); if (c) m = String(m) + '\n\n🧾 Error code: ' + c; } } catch (e) {} return oa.call(window, m); };
+  // ---- viewer (admin)
+  const FMT = iso => { try { return new Date(iso).toLocaleString('en-PH', { timeZone: 'Asia/Manila', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', second: '2-digit' }); } catch (e) { return iso; } };
+  function detail(r) { const o = document.createElement('div'); o.style.cssText = 'position:fixed;inset:0;background:#0008;z-index:2147483001;display:flex;align-items:center;justify-content:center;padding:10px'; const c = r.conn || {};
+    o.innerHTML = '<div style="background:#fff;color:#111;border-radius:12px;max-width:640px;width:100%;max-height:90vh;overflow:auto;padding:16px;font:14px system-ui,sans-serif"><h3 style="margin:0 0 4px">🧾 ' + E(r.code) + '</h3><div style="color:#555;font-size:12px;margin-bottom:8px">' + E(FMT(r.at)) + ' · ' + E(r.type) + ' · ' + E(r.status || 'open') + '</div>' +
+      '<div style="background:#fef2f2;border-radius:8px;padding:8px;margin-bottom:8px"><b>Posibleng dahilan</b><br>' + (r.diag || []).map(x => '• ' + E(x)).join('<br>') + '</div>' +
+      '<table style="width:100%;font-size:13px;border-collapse:collapse">' + [['Mensahe', r.msg], ['Firestore/Auth code', r.fsCode], ['User', (r.name ? r.name + ' · ' : '') + r.user + ' (' + r.role + ')'], ['Menu / Page', (r.module || '-') + ' · ' + r.page], ['Saan', r.where || (r.file ? r.file + ':' + r.line + ':' + r.col : '')], ['Connection', (c.online ? 'Online' : 'OFFLINE') + ' · ' + (c.type || '?') + ' · rtt ' + (c.rtt == null ? '?' : c.rtt + 'ms') + ' · ' + (c.down == null ? '?' : c.down + 'Mbps')], ['Device', r.ua + ' · ' + r.scr], ['Tala', r.note]].filter(x => x[1]).map(x => '<tr><td style="vertical-align:top;color:#555;padding:3px 8px 3px 0;white-space:nowrap">' + x[0] + '</td><td style="word-break:break-word">' + E(x[1]) + '</td></tr>').join('') + '</table>' +
+      '<b style="display:block;margin-top:8px">Huling ginawa (breadcrumbs)</b><pre style="background:#f1f5f9;border-radius:8px;padding:8px;white-space:pre-wrap;font-size:12px;margin:4px 0">' + E((r.crumbs || []).join('\n') || '-') + '</pre>' +
+      '<b>Stack</b><pre style="background:#f1f5f9;border-radius:8px;padding:8px;white-space:pre-wrap;font-size:11px;max-height:160px;overflow:auto;margin:4px 0">' + E(r.stack || '-') + '</pre>' +
+      '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px"><button id="ke-cp" style="padding:7px 12px">Kopyahin lahat</button><button id="ke-rs" style="padding:7px 12px">' + (r.status === 'resolved' ? '↩️ Buksan ulit' : '✔ Naayos na') + '</button><button id="ke-x" style="padding:7px 12px">Isara</button></div></div>'; document.body.appendChild(o);
+    $('ke-x').onclick = () => o.remove(); $('ke-cp').onclick = () => { try { navigator.clipboard.writeText(JSON.stringify(r, null, 2)); $('ke-cp').textContent = '✔ Nakopya'; } catch (e) {} };
+    $('ke-rs').onclick = async () => { try { await D().collection('error_logs').doc(r.code).update({ status: r.status === 'resolved' ? 'open' : 'resolved' }); o.remove(); viewer(); } catch (e) { alert('Hindi ma-update: ' + e.message); } }; }
+  async function viewer(pre) { const old = $('kerr-v'); if (old) old.remove(); const o = document.createElement('div'); o.id = 'kerr-v'; o.style.cssText = 'position:fixed;inset:0;background:#0008;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:10px';
+    o.innerHTML = '<div style="background:#fff;color:#111;border-radius:12px;max-width:760px;width:100%;max-height:90vh;display:flex;flex-direction:column;font:14px system-ui,sans-serif"><div style="padding:12px 14px;border-bottom:1px solid #e5e7eb;display:flex;gap:8px;align-items:center"><b style="flex:1">🧾 Error Logs</b><button id="kv-x" style="padding:5px 10px">✖</button></div><div style="padding:10px 14px;display:flex;gap:6px"><input id="kv-q" placeholder="Hanapin: ERR-… code, email, menu, mensahe" style="flex:1;padding:8px;font-size:16px;border:1px solid #cbd5e1;border-radius:8px"><button id="kv-go" style="padding:6px 12px">Hanapin</button></div><div id="kv-l" style="overflow:auto;padding:0 14px 14px">Naglo-load…</div></div>'; document.body.appendChild(o);
+    $('kv-x').onclick = () => o.remove(); let rows = [];
+    const draw = () => { const t = ($('kv-q').value || '').trim().toLowerCase(); const L = rows.filter(r => !t || [r.code, r.user, r.module, r.msg, r.fsCode, r.page, r.name].join(' ').toLowerCase().includes(t)); $('kv-l').innerHTML = L.length ? L.map(r => '<div data-c="' + E(r.code) + '" style="border:1px solid #e5e7eb;border-radius:8px;padding:8px;margin-bottom:6px;cursor:pointer;' + (r.status === 'resolved' ? 'opacity:.55' : '') + '"><b>' + E(r.code) + '</b> <span style="color:#555;font-size:12px">' + E(FMT(r.at)) + (r.status === 'resolved' ? ' · ✔' : '') + '</span><br><span style="font-size:13px">' + E(String(r.msg).slice(0, 110)) + '</span><br><small style="color:#555">' + E(r.user) + ' · ' + E(r.module || r.page) + ' · ' + ((r.conn || {}).online === false ? '📴 offline' : E((r.conn || {}).type || 'online')) + '</small><br><small style="color:#b91c1c">' + E(((r.diag || [])[0] || '')) + '</small></div>').join('') : '<i>Walang nahanap.</i>'; $('kv-l').querySelectorAll('[data-c]').forEach(x => x.onclick = () => detail(rows.find(r => r.code === x.dataset.c))); };
+    $('kv-go').onclick = async () => { const t = ($('kv-q').value || '').trim().toUpperCase(); if (/^ERR-[A-Z0-9]{6}-[A-Z0-9]{3}$/.test(t) && !rows.find(r => r.code === t)) { try { const d = await D().collection('error_logs').doc(t).get(); if (d.exists) rows.unshift(d.data()); } catch (e) {} } draw(); }; $('kv-q').onkeydown = e => { if (e.key === 'Enter') $('kv-go').click(); else setTimeout(draw, 0); };
+    try { const sn = await D().collection('error_logs').orderBy('at', 'desc').limit(150).get(); rows = sn.docs.map(d => d.data()); } catch (e) { $('kv-l').innerHTML = '⚠️ Hindi ma-load: ' + E(e.message); return; } if (pre) $('kv-q').value = pre; draw(); if (pre) $('kv-go').click(); }
+  function mount() { const pos = document.querySelector('.menu-item[data-module="pos"]'); if (!pos || $('kerr-menu') || !isA()) return; const m = document.createElement('a'); m.id = 'kerr-menu'; m.href = 'javascript:void(0)'; m.className = pos.className; m.innerHTML = '<i>🧾</i> Error Logs'; m.onclick = () => viewer(); pos.parentNode.appendChild(m); }
+  function hook() { const o = window.switchAdminView; if (typeof o === 'function' && !o._ke) { const w = function (v) { VIEW = v; crumb('menu: ' + v); return o.apply(this, arguments); }; w._ke = 1; window.switchAdminView = w; } }
+  window.kErr = { log, viewer, flush, crumb, conn, last: () => Object.values(SEEN).sort((a, b) => b.t - a.t)[0] };
+  const boot = () => { flush(); setInterval(() => { try { mount(); hook(); flush(); } catch (e) {} }, 3000); try { fetch(location.pathname, { method: 'HEAD', cache: 'no-store' }).then(r => { const d = Date.parse(r.headers.get('Date')); if (d && Math.abs(d - Date.now()) > 2000) SKEW = d - Date.now(); }).catch(() => {}); } catch (e) {} };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(boot, 1500)); else setTimeout(boot, 1500);
+})();
