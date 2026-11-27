@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="fil">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KusinaERP — Setup ng Bagong Firebase / Database</title>
+<style>
+  :root { --b:#2563eb; --bd:#e2e8f0; --mut:#64748b; }
+  * { box-sizing: border-box; }
+  body { font: 15px/1.5 system-ui, Arial, sans-serif; margin: 0; background: #f1f5f9; color: #0f172a; }
+  .wrap { max-width: 820px; margin: 0 auto; padding: 14px; }
+  h1 { font-size: 1.35rem; margin: .4rem 0; }
+  .card { background: #fff; border: 1px solid var(--bd); border-radius: 12px; padding: 14px; margin: 12px 0; }
+  .card h2 { font-size: 1.05rem; margin: 0 0 6px; }
+  .n { display: inline-block; background: var(--b); color: #fff; border-radius: 50%; width: 24px; height: 24px; text-align: center; font-size: .85rem; line-height: 24px; margin-right: 6px; }
+  textarea, input { width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 8px; font: inherit; }
+  textarea { min-height: 120px; font: 12px/1.4 ui-monospace, Menlo, monospace; }
+  button { background: var(--b); color: #fff; border: 0; border-radius: 8px; padding: 8px 14px; font: inherit; cursor: pointer; margin: 4px 4px 0 0; }
+  button.s { background: #e2e8f0; color: #0f172a; } button:disabled { opacity: .5; cursor: default; }
+  .ok { color: #16a34a; } .no { color: #dc2626; } .mut { color: var(--mut); font-size: .85rem; }
+  ol, ul { padding-left: 20px; margin: 6px 0; } li { margin: 3px 0; }
+  pre { white-space: pre-wrap; background: #0f172a; color: #e2e8f0; padding: 10px; border-radius: 8px; font-size: 12px; overflow: auto; }
+  .warn { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 8px; font-size: .88rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>🛠️ KusinaERP — Setup ng Bagong Firebase / Database</h1>
+<p class="mut">Gamitin kapag ililipat sa ibang Firebase account (hal. email ng kumpanya / IT). Sundan mula 1 hanggang 5. Ang mga collection (table) ay awtomatikong nabubuo ng Firestore sa unang save — dito inihahanda ang mga kailangan para gumana agad.</p>
+
+<div class="card"><h2><span class="n">1</span>Gumawa ng Firebase project (isang beses, sa browser)</h2>
+<ol>
+<li>Mag-login sa <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> gamit ang email ng kumpanya → <b>Add project</b>.</li>
+<li><b>Build → Authentication → Get started</b> → i-enable ang <b>Google</b> (at <b>Email/Password</b> kung gagamitin).</li>
+<li>Sa <b>Authentication → Settings → Authorized domains</b>: idagdag ang domain ng site mo (hal. <code>iyong-pangalan.github.io</code>).</li>
+<li><b>Build → Firestore Database → Create database</b> → <b>Production mode</b> → piliin ang pinakamalapit na region (hal. <code>asia-southeast1</code>).</li>
+<li><b>Project settings (⚙️) → Your apps → Web app (&lt;/&gt;)</b> → Register → kopyahin ang <code>firebaseConfig</code>.</li>
+</ol></div>
+
+<div class="card"><h2><span class="n">2</span>I-convert ang config → <code>firebase-config.js</code></h2>
+<p class="mut">I-paste ang buong <code>firebaseConfig</code> na kinopya mo (kahit may <code>const firebaseConfig =</code>).</p>
+<textarea id="cfgIn" placeholder='const firebaseConfig = { apiKey: "...", authDomain: "...", projectId: "...", ... };'></textarea>
+<button onclick="genCfg()">Gawin ang firebase-config.js</button>
+<div id="cfgOut" style="display:none"><textarea id="cfgTxt" readonly></textarea>
+<button onclick="cp('cfgTxt')">📋 Kopyahin</button><button class="s" onclick="dl('firebase-config.js','cfgTxt')">⬇ I-download</button>
+<div class="mut">I-upload ito sa GitHub bilang <b>firebase-config.js</b> (papalitan ang luma) sa parehong folder ng admin.html.</div></div></div>
+
+<div class="card"><h2><span class="n">3</span>Gumawa ng <code>firestore.rules</code> para sa may-ari</h2>
+<p class="mut">Ang may-ari ang magiging unang <b>Super Admin</b>. Ilagay ang eksaktong email na ipang-lologin niya.</p>
+<input id="ownerIn" type="email" placeholder="it@kumpanya.com">
+<button onclick="genRules()">Gawin ang rules</button>
+<div id="rulesOut" style="display:none">
+<p class="mut" id="rulesMsg"></p>
+<textarea id="rulesTxt" style="min-height:160px" placeholder="Kung hindi na-load, i-paste dito ang laman ng firestore.rules at pindutin ulit ang Gawin."></textarea>
+<button onclick="cp('rulesTxt')">📋 Kopyahin</button><button class="s" onclick="dl('firestore.rules','rulesTxt')">⬇ I-download</button>
+<div class="mut"><b>I-publish:</b> Firebase Console → Firestore Database → <b>Rules</b> → i-paste → <b>Publish</b>. (Option: <code>firebase deploy --only firestore:rules</code> kung may Firebase CLI.)</div></div></div>
+
+<div class="card"><h2><span class="n">4</span>Ihanda ang database</h2>
+<div id="cfgState" class="warn" style="display:none"></div>
+<p class="mut">Gawin lang ito <b>pagkatapos</b> ma-upload ang bagong <code>firebase-config.js</code> at ma-publish ang rules (Hakbang 2–3). Mag-sign in gamit ang <b>email ng may-ari</b>.</p>
+<button id="btnIn" onclick="signIn()">🔐 Mag-sign in gamit ang Google</button>
+<span id="who" class="mut"></span><br>
+<button id="btnInit" onclick="initDb()" disabled>🚀 Ihanda ang Database (unang Super Admin + settings)</button>
+<button id="btnChk" class="s" onclick="checkDb()" disabled>🔍 Suriin ang koneksyon at rules</button>
+<pre id="log" style="display:none"></pre></div>
+
+<div class="card"><h2><span class="n">5</span>Pagkatapos</h2>
+<ul>
+<li>Pumunta sa <b>index.html</b>, mag-login gamit ang email ng may-ari → Admin na siya.</li>
+<li>Sa Admin → <b>Users</b>, idagdag at i-approve ang mga tao; <b>Access Control</b> para sa permissions.</li>
+<li>Ilagay ang company info, mga branch, produkto, vendor, at POS Setup (SI Prefix / SI Next).</li>
+<li>May test data na dati? Admin → <b>Truncate → 🚀 Go-Live Reset</b> para malinis at bumalik sa 1 ang SI number.</li>
+</ul>
+<p class="mut">Hindi kayang gawin ng website na ito ang paggawa ng Firebase project, pag-enable ng Authentication, at pag-publish ng rules — kailangan ang mga iyon ng Firebase Console (isang beses lang). Lahat ng iba ay awtomatiko.</p></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+function cp(id) { const t = $(id); t.select(); try { document.execCommand('copy'); } catch (e) {} if (navigator.clipboard) navigator.clipboard.writeText(t.value).catch(() => {}); alert('Nakopya na.'); }
+function dl(name, id) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([$(id).value], { type: 'text/plain' })); a.download = name; document.body.appendChild(a); a.click(); a.remove(); }
+function genCfg() {
+  const t = $('cfgIn').value, g = k => { const m = t.match(new RegExp(k + '\\s*[:=]\\s*["\']([^"\']+)["\']')); return m ? m[1] : ''; };
+  const c = { apiKey: g('apiKey'), authDomain: g('authDomain'), projectId: g('projectId'), storageBucket: g('storageBucket'), messagingSenderId: g('messagingSenderId'), appId: g('appId') };
+  if (!c.apiKey || !c.projectId || !c.appId) { alert('Kulang ang config (apiKey, projectId, appId). I-paste ang buong firebaseConfig.'); return; }
+  if (c.measurementId !== undefined) delete c.measurementId;
+  $('cfgTxt').value = `// Firebase Configuration — project: ${c.projectId}\nconst firebaseConfig = {\n${Object.entries(c).map(([k, v]) => `  ${k}: "${v}"`).join(',\n')}\n};\n\n// Initialize Firebase\nif (typeof firebase !== 'undefined') {\n  firebase.initializeApp(firebaseConfig);\n  window.auth = firebase.auth();\n  window.db = firebase.firestore();\n} else {\n  console.error("Firebase SDK hindi nag-load nang tama.");\n}\n`;
+  $('cfgOut').style.display = 'block';
+}
+async function genRules() {
+  const em = $('ownerIn').value.trim().toLowerCase(); if (!/^[^@\s'"]+@[^@\s'"]+\.[^@\s'"]+$/.test(em)) { alert('Maling email.'); return; }
+  let src = $('rulesTxt').value, msg = '';
+  if (!/function ownerEmail\(\)/.test(src)) { try { const r = await fetch('firestore.rules?' + Date.now()); if (r.ok) { src = await r.text(); msg = 'Na-load ang firestore.rules mula sa site.'; } } catch (e) {} }
+  $('rulesOut').style.display = 'block';
+  if (!/function ownerEmail\(\)/.test(src)) { $('rulesMsg').textContent = 'Hindi ma-load ang firestore.rules mula sa site. I-paste ang buong laman ng firestore.rules sa kahon sa ibaba, tapos pindutin ulit ang "Gawin ang rules".'; return; }
+  src = src.replace(/function ownerEmail\(\) \{ return '[^']*'; \}/, `function ownerEmail() { return '${em}'; }`);
+  $('rulesTxt').value = src; $('rulesMsg').textContent = (msg ? msg + ' ' : '') + 'Naka-set ang may-ari: ' + em;
+}
+/* ---------- Hakbang 4 ---------- */
+const LOG = m => { const p = $('log'); p.style.display = 'block'; p.textContent += m + '\n'; };
+let ME = null, READY = typeof firebase !== 'undefined' && window.db && typeof firebaseConfig !== 'undefined' && firebaseConfig.projectId && !/YOUR_/.test(firebaseConfig.projectId);
+if (!READY) { const s = $('cfgState'); s.style.display = 'block'; s.textContent = '⚠ Wala pang totoong firebase-config.js na naka-upload (nakikita pa ang "YOUR_PROJECT_ID"). Tapusin muna ang Hakbang 2.'; $('btnIn').disabled = true; }
+else { $('cfgState').style.display = 'block'; $('cfgState').style.background = '#f0fdf4'; $('cfgState').textContent = '✔ Nakakonekta sa project: ' + firebaseConfig.projectId; auth.onAuthStateChanged(u => { ME = u; $('who').textContent = u ? ' ✔ ' + u.email : ''; $('btnInit').disabled = !u; $('btnChk').disabled = !u; }); }
+async function signIn() { try { await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); } catch (e) { alert('Hindi nakapag-sign in: ' + e.message + '\n(Tiyaking naka-enable ang Google sign-in at nakalista ang domain sa Authorized domains.)'); } }
+async function initDb() {
+  if (!ME) return; const em = ME.email.toLowerCase(), now = new Date().toISOString(); $('btnInit').disabled = true; $('log').textContent = '';
+  try {
+    const sup = await db.collection('system_settings').doc('super_admins').get();
+    if (sup.exists) { const L = sup.data().emails || []; LOG(L.includes(em) ? '✔ Naka-setup na ang database at Super Admin ka na.' : '✖ May Super Admin na ang database na ito (' + L.join(', ') + '). Hilingin sa kanila na idagdag ka sa Users.'); $('btnInit').disabled = false; return; }
+    const ur = db.collection('users').doc(em), u = await ur.get();
+    if (u.exists && !/admin/i.test(String(u.data().role)) ) { LOG('✖ May dati nang user profile ang email na ito na hindi Admin ("' + u.data().role + '"). Sa Firebase Console → Firestore → users → ' + em + ' → burahin ang dokumentong iyon, tapos subukan ulit.'); $('btnInit').disabled = false; return; }
+    if (!u.exists) { await ur.set({ email: em, name: ME.displayName || em, role: 'admin', status: 'active', position: 'Owner / Super Admin', createdAt: now, createdBy: 'setup.html' }); LOG('✔ Ginawa ang Admin profile: ' + em); } else LOG('✔ Admin profile ay nandoon na.');
+    await db.collection('system_settings').doc('super_admins').set({ emails: [em], updatedAt: now, updatedBy: em }); LOG('✔ Super Admin: ' + em);
+    await db.collection('system_settings').doc('setup_meta').set({ initializedAt: now, initializedBy: em, app: 'KusinaERP', schema: 1 }); LOG('✔ Setup record');
+    LOG('\n✅ HANDA NA. Mag-login sa index.html gamit ang ' + em + '. Ang ibang collection ay awtomatikong mabubuo sa unang save ng bawat module (POS, Orders, Tickets, atbp.).');
+    await checkDb(true);
+  } catch (e) { LOG('✖ ' + e.message + (/permission/i.test(e.message) ? '\n   → Hindi pa na-publish ang bagong firestore.rules, o iba ang email sa inilagay mo sa Hakbang 3.' : '')); }
+  $('btnInit').disabled = false;
+}
+async function checkDb(append) {
+  if (!ME) return; if (!append) $('log').textContent = ''; LOG('— Pagsusuri —');
+  const cols = ['users', 'system_settings', 'products', 'orders', 'employees', 'pos_sales', 'pos_setup', 'pos_counters', 'chats', 'tk_boards', 'tk_tickets', 'inventory_items', 'general_ledger', 'attendance_logs'];
+  let ok = 0; for (const c of cols) { try { await db.collection(c).limit(1).get(); LOG('✔ ' + c); ok++; } catch (e) { LOG('✖ ' + c + ' — ' + (/permission/i.test(e.message) ? 'bawal (rules/role)' : e.message)); } }
+  try { const r = db.collection('system_settings').doc('setup_ping'); await r.set({ t: Date.now() }); await r.delete(); LOG('✔ Sulat/burahin sa system_settings'); } catch (e) { LOG('✖ Sulat sa system_settings: ' + e.message); }
+  LOG(ok === cols.length ? '\n✅ Gumagana ang rules at koneksyon.' : '\n⚠ May hindi nabasa — siguraduhing na-publish ang bagong rules at tapos na ang "Ihanda ang Database".');
+}
+</script>
+</body>
+</html>
